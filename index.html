@@ -6,48 +6,48 @@
 <title>Generador — Situación Actual Climática</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:#0d0d14;color:#ccc;font-family:sans-serif;padding:16px}
+body{background:#f2f0eb;color:#1a1820;font-family:sans-serif;padding:16px}
 .top-bar{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
-.top-bar input{background:#1a1a2e;border:1px solid #333;color:#fff;padding:7px 10px;border-radius:6px;font-size:13px}
+.top-bar input{background:#fff;border:1px solid #ccc;color:#1a1820;padding:7px 10px;border-radius:6px;font-size:13px}
 .top-bar input[type=number]{width:130px}
 .top-bar input[type=text]{width:200px}
-.top-bar button{background:#e8b84b;color:#0d0d14;border:none;padding:8px 20px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer}
-.top-bar button:hover{background:#f0c85a}
+.top-bar button{background:#c8900a;color:#fff;border:none;padding:8px 20px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer}
+.top-bar button:hover{background:#e0a010}
 .status{font-size:12px;color:#888}
-h1{font-size:18px;font-weight:700;color:#fff;letter-spacing:.5px;margin-bottom:3px}
-.subtitle{font-size:11px;color:#666;margin-bottom:10px}
-.sep{height:1px;background:#e8b84b44;margin-bottom:12px}
+h1{font-size:18px;font-weight:700;color:#1a1820;letter-spacing:.5px;margin-bottom:3px}
+.subtitle{font-size:11px;color:#888;margin-bottom:10px}
+.sep{height:1px;background:#c8900a55;margin-bottom:12px}
 .main-grid{display:grid;grid-template-columns:180px 1fr 1fr;gap:8px}
-.panel{background:#12121e;border:0.5px solid #222233;border-radius:8px;padding:10px}
-.panel-title{font-size:10px;font-weight:700;color:#e8b84b;margin-bottom:8px;letter-spacing:.8px}
-.clima-row{background:#1e1e2e;border-radius:4px;padding:5px 8px;margin-bottom:5px}
+.panel{background:#fff;border:0.5px solid #ddd8d0;border-radius:8px;padding:10px}
+.panel-title{font-size:10px;font-weight:700;color:#c8900a;margin-bottom:8px;letter-spacing:.8px}
+.clima-row{background:#f7f5f1;border-radius:4px;padding:5px 8px;margin-bottom:5px}
 .clima-row .val{font-size:12px;font-weight:700}
-.clima-row .lbl{font-size:10px;color:#666;margin-top:1px}
+.clima-row .lbl{font-size:10px;color:#999;margin-top:1px}
 .cards-row{grid-column:2/-1;display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
-.card{background:#12121e;border-radius:8px;overflow:hidden}
-.card-head{padding:6px 8px;font-size:10px;font-weight:700;text-align:center;color:#0d0d14}
+.card{background:#fff;border-radius:8px;overflow:hidden;border:0.5px solid #ddd8d0}
+.card-head{padding:6px 8px;font-size:10px;font-weight:700;text-align:center;color:#fff}
 .card-body{padding:6px 8px}
-.card-row{display:flex;justify-content:space-between;align-items:center;background:#1a1a28;border-radius:3px;padding:4px 6px;margin-bottom:3px}
-.card-row .k{font-size:10px;color:#666}
+.card-row{display:flex;justify-content:space-between;align-items:center;background:#f7f5f1;border-radius:3px;padding:4px 6px;margin-bottom:3px}
+.card-row .k{font-size:10px;color:#999}
 .card-row .v{font-size:11px;font-weight:700}
-.iso-panel{grid-column:2/3;grid-row:2/3}
+.iso-panel{grid-column:2/3;grid-row:2/3;display:flex;flex-direction:column}
 .diagrams{grid-column:3/4;grid-row:2/3;display:grid;grid-template-rows:1fr 1fr;gap:8px}
 .clima-panel{grid-column:1/2;grid-row:2/3}
-#iso-canvas{position:relative;overflow:hidden;border-radius:4px}
+#iso-canvas{position:relative;overflow:hidden;border-radius:4px;flex:1;min-height:300px}
 #iso-canvas canvas{display:block}
-.diag-title{font-size:10px;font-weight:700;color:#e8b84b;text-align:center;margin-bottom:6px}
+.diag-title{font-size:10px;font-weight:700;color:#c8900a;text-align:center;margin-bottom:6px}
 .mini-legend{display:flex;gap:10px;justify-content:center;margin-top:4px;flex-wrap:wrap}
 .mini-legend span{font-size:10px;color:#888;display:flex;align-items:center;gap:4px}
 .dot{width:8px;height:8px;border-radius:50%;display:inline-block}
-.footer{margin-top:12px;padding-top:8px;border-top:0.5px solid #222;display:flex;justify-content:space-between;font-size:10px;color:#555}
+.footer{margin-top:12px;padding-top:8px;border-top:0.5px solid #ddd;display:flex;justify-content:space-between;font-size:10px;color:#aaa}
 .bar-chart{margin-top:10px}
 .bar-row{display:flex;align-items:center;gap:4px;margin-bottom:3px}
-.bar-label{font-size:9px;color:#666;width:22px;text-align:right}
-.bar-track{flex:1;background:#1a1a28;border-radius:2px;height:10px;position:relative}
-.bar-max{position:absolute;top:0;left:0;height:10px;border-radius:2px;background:#e84b4b88}
-.bar-min{position:absolute;top:0;left:0;height:10px;border-radius:2px;background:#4bb8e888}
-.bar-val{font-size:9px;color:#888;width:36px}
-.iso-hint{position:absolute;bottom:6px;right:8px;font-size:9px;color:#444;pointer-events:none}
+.bar-label{font-size:9px;color:#999;width:22px;text-align:right}
+.bar-track{flex:1;background:#ede9e2;border-radius:2px;height:10px;position:relative}
+.bar-max{position:absolute;top:0;left:0;height:10px;border-radius:2px;background:#c8202088}
+.bar-min{position:absolute;top:0;left:0;height:10px;border-radius:2px;background:#1a6db088}
+.bar-val{font-size:9px;color:#999;width:36px}
+.iso-hint{position:absolute;bottom:6px;right:8px;font-size:9px;color:#bbb;pointer-events:none}
 </style>
 </head>
 <body>
@@ -75,9 +75,9 @@ h1{font-size:18px;font-weight:700;color:#fff;letter-spacing:.5px;margin-bottom:3
     <div style="grid-column:1/-1;color:#555;font-size:11px;padding:8px">Presiona Generar análisis</div>
   </div>
 
-  <div class="panel iso-panel" style="min-height:290px">
+  <div class="panel iso-panel" style="min-height:340px">
     <div class="panel-title">EMPLAZAMIENTO — EDIFICIOS REALES (OSM)</div>
-    <div id="iso-canvas" style="width:100%;height:250px">
+    <div id="iso-canvas" style="width:100%;flex:1;min-height:280px">
       <div style="color:#555;font-size:11px;padding:20px;text-align:center">Presiona Generar análisis</div>
     </div>
     <div id="sun-controls" style="display:none;padding:6px 4px 0;display:flex;gap:8px;align-items:center">
@@ -120,7 +120,7 @@ h1{font-size:18px;font-weight:700;color:#fff;letter-spacing:.5px;margin-bottom:3
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
 <script>
-const ACCENT='#e8b84b',ACCENT2='#4bb8e8',ORANGE='#e87a4b',TEAL='#4be8c8',GREEN='#4be870',RED='#e84b4b',GRAY='#888',LGRAY='#ccc',BG='#0d0d14',PANEL='#12121e',DGRAY='#222233';
+const ACCENT='#c8900a',ACCENT2='#1a6db0',ORANGE='#c84020',TEAL='#0a9080',GREEN='#1a9040',RED='#c82020',GRAY='#888',LGRAY='#222',BG='#f2f0eb',PANEL='#ffffff',DGRAY='#ddd8d0';
 
 function toRad(d){return d*Math.PI/180}
 function fmt(n,d=1){return isNaN(n)||n==null?'--':Number(n).toFixed(d)}
@@ -282,14 +282,14 @@ async function drawIso(lat,lon,name){
   if(_3d.animId)cancelAnimationFrame(_3d.animId);
   if(_3d.renderer){_3d.renderer.dispose();_3d.renderer=null;}
 
-  const W=cont.clientWidth||420,H=250;
+  const W=cont.clientWidth||420,H=cont.clientHeight||300;
   const osm=await fetchBuildings(lat,lon);
   const buildings=parseBuildings(osm,lat,lon);
   cont.innerHTML='';
 
   const scene=new THREE.Scene();
-  scene.background=new THREE.Color(0x0d0d14);
-  scene.fog=new THREE.FogExp2(0x0d0d14,0.0025);
+  scene.background=new THREE.Color(0xdce8f4);
+  scene.fog=new THREE.FogExp2(0xdce8f4,0.002);
 
   const camera=new THREE.PerspectiveCamera(45,W/H,1,2000);
   camera.position.set(0,160,200);
@@ -305,10 +305,10 @@ async function drawIso(lat,lon,name){
   // Flecha Norte
   const nDiv=document.createElement('div');
   nDiv.style.cssText='position:absolute;top:8px;right:10px;text-align:center;pointer-events:none;z-index:10';
-  nDiv.innerHTML=`<div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:14px solid #e8b84b;margin:0 auto"></div><div style="width:2px;height:14px;background:#e8b84b;margin:0 auto"></div><div style="font-size:9px;color:#e8b84b;font-weight:700;margin-top:2px">N</div>`;
+  nDiv.innerHTML=`<div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:14px solid #c8900a;margin:0 auto"></div><div style="width:2px;height:14px;background:#c8900a;margin:0 auto"></div><div style="font-size:9px;color:#c8900a;font-weight:700;margin-top:2px">N</div>`;
   cont.appendChild(nDiv);
 
-  scene.add(new THREE.AmbientLight(0x334455,0.7));
+  scene.add(new THREE.AmbientLight(0x9ab0c8,0.9));
   const sunLight=new THREE.DirectionalLight(0xfff5dd,1.4);
   sunLight.castShadow=true;
   sunLight.shadow.mapSize.width=1024;
@@ -331,14 +331,14 @@ async function drawIso(lat,lon,name){
 
   const gnd=new THREE.Mesh(
     new THREE.PlaneGeometry(1200,1200),
-    new THREE.MeshLambertMaterial({color:0x181828})
+    new THREE.MeshLambertMaterial({color:0xd4cfc6})
   );
   gnd.rotation.x=-Math.PI/2;
   gnd.receiveShadow=true;
   scene.add(gnd);
-  scene.add(new THREE.GridHelper(600,40,0x1c1c30,0x161626));
+  scene.add(new THREE.GridHelper(600,40,0xbbb8b0,0xcac7be));
 
-  const COLS=[0x1a3a6a,0x253d6e,0x152e58,0x1e3355,0x2a4a7a,0x1b3260,0x203870];
+  const COLS=[0x8aaac8,0x6a8cb0,0x9ab4cc,0x7898b8,0x5a7ca0,0x8aa4c0,0x6890b4];
 
   if(buildings.length>0){
     buildings.forEach((b,i)=>{
@@ -355,7 +355,7 @@ async function drawIso(lat,lon,name){
         scene.add(mesh);
         scene.add(new THREE.LineSegments(
           new THREE.EdgesGeometry(geo),
-          new THREE.LineBasicMaterial({color:0x080818})
+          new THREE.LineBasicMaterial({color:0x405878})
         ));
       }catch(e){}
     });
@@ -407,7 +407,7 @@ function drawWindRose(mdata){
   const ctx=cv.getContext('2d');
   const W=cv.width,H=cv.height;
   ctx.fillStyle=PANEL;ctx.fillRect(0,0,W,H);
-  const cx=W/2,cy=H/2+5,R=Math.min(W,H)*0.35;
+  const cx=W/2,cy=H/2+4,R=Math.min(W,H)*0.33;
 
   if(!mdata){
     ctx.fillStyle=GRAY;ctx.font='11px sans-serif';ctx.textAlign='center';
@@ -422,54 +422,99 @@ function drawWindRose(mdata){
     }
   });
   const maxB=Math.max(...bins)||1;
+  const wsVals=mdata.map(m=>m.ws).filter(v=>v!=null);
+  const maxWs=Math.max(...wsVals)||20;
 
-  for(let f of[0.33,0.66,1]){
-    ctx.strokeStyle=DGRAY;ctx.lineWidth=0.4;
+  // Anillos de referencia con etiquetas
+  [0.33,0.66,1].forEach((f,i)=>{
+    ctx.strokeStyle=DGRAY;ctx.lineWidth=0.6;
+    ctx.setLineDash([3,3]);
     ctx.beginPath();ctx.arc(cx,cy,R*f,0,Math.PI*2);ctx.stroke();
-  }
-
-  const dirs8=['N','NE','E','SE','S','SO','O','NO'];
-  const angs8=[90,45,0,315,270,225,180,135];
-  dirs8.forEach((d,i)=>{
-    const a=toRad(angs8[i]);
-    ctx.strokeStyle=DGRAY;ctx.lineWidth=0.3;
-    ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(a)*R,cy+Math.sin(a)*R);ctx.stroke();
-    const lx=cx+Math.cos(a)*(R+15),ly=cy+Math.sin(a)*(R+15);
-    ctx.fillStyle=LGRAY;ctx.font='9px sans-serif';ctx.textAlign='center';ctx.fillText(d,lx,ly+3);
+    ctx.setLineDash([]);
+    const spd=Math.round(maxWs*f);
+    ctx.fillStyle='#bbb';ctx.font='7px sans-serif';ctx.textAlign='left';
+    ctx.fillText(`${spd}`,cx+R*f+2,cy-2);
   });
 
+  // Ejes cardinales
+  const dirs16=['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSO','SO','OSO','O','ONO','NO','NNO'];
+  const dirs8=['N','NE','E','SE','S','SO','O','NO'];
+  for(let i=0;i<16;i++){
+    const a=toRad(90-i*22.5);
+    ctx.strokeStyle=i%2===0?'#ccc8c0':'#e0ddd8';ctx.lineWidth=0.5;
+    ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(a)*R,cy-Math.sin(a)*R);ctx.stroke();
+  }
+  dirs8.forEach((d,i)=>{
+    const a=toRad(90-i*45);
+    const lx=cx+Math.cos(a)*(R+14),ly=cy-Math.sin(a)*(R+14);
+    ctx.fillStyle=d==='N'?ACCENT:LGRAY;
+    ctx.font=d==='N'?'bold 9px sans-serif':'8px sans-serif';
+    ctx.textAlign='center';ctx.fillText(d,lx,ly+3);
+  });
+
+  // Pétalos rellenos por sector
   bins.forEach((v,i)=>{
     if(!v)return;
-    const a=toRad(90-i*22.5),r=R*(v/maxB);
-    const col=v/maxB>0.7?ACCENT:v/maxB>0.4?ORANGE:ACCENT2;
-    ctx.strokeStyle=col;ctx.lineWidth=Math.max(1.5,v/maxB*6);
-    ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(a)*r,cy-Math.sin(a)*r);ctx.stroke();
+    const r=R*(v/maxB);
+    const ang=toRad(90-i*22.5);
+    const half=toRad(11.25);
+    const t=v/maxB;
+    // Color: azul (calma) → naranja → rojo (fuerte)
+    const col=t>0.75?ORANGE:t>0.4?ACCENT2:'#70aad4';
+    ctx.beginPath();
+    ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,r,-(ang+half),-(ang-half),false);
+    ctx.closePath();
+    ctx.fillStyle=col+'cc';
+    ctx.fill();
+    ctx.strokeStyle=col;ctx.lineWidth=0.8;ctx.stroke();
   });
 
-  ctx.fillStyle=ACCENT;ctx.beginPath();ctx.arc(cx,cy,4,0,Math.PI*2);ctx.fill();
+  // Centro
+  ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(cx,cy,5,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle=ACCENT;ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(cx,cy,5,0,Math.PI*2);ctx.stroke();
 
+  // Leyenda
   const maxIdx=bins.indexOf(maxB);
   const domDir=windDirName(maxIdx*22.5);
+  const wsAvg=avg(wsVals);
   document.getElementById('wind-legend').innerHTML=
-    `<span style="color:${ACCENT2};font-size:10px">Dir. predominante: <b style="color:${ACCENT}">${domDir}</b></span>`;
+    `<span style="color:#888;font-size:10px">Predominante: <b style="color:${ACCENT}">${domDir}</b> &nbsp;·&nbsp; Media: <b style="color:${ACCENT2}">${fmt(wsAvg,1)} km/h</b></span>`;
 }
 
 function drawSunPath(lat){
   const cv=document.getElementById('sun-canvas');
   const ctx=cv.getContext('2d');
   const W=cv.width,H=cv.height;
+  const cx=W/2,cy=H/2+6,R=Math.min(W,H)*0.35;
+
+  // Fondo cielo con degradado
+  const sky=ctx.createRadialGradient(cx,cy,0,cx,cy,R);
+  sky.addColorStop(0,'#c8dff5');sky.addColorStop(1,'#e8f2fc');
   ctx.fillStyle=PANEL;ctx.fillRect(0,0,W,H);
-  const cx=W/2,cy=H/2+8,R=Math.min(W,H)*0.37;
+  ctx.fillStyle=sky;ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.fill();
 
-  ctx.fillStyle='#181828';ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.fill();
-  ctx.strokeStyle=DGRAY;ctx.lineWidth=0.5;ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.stroke();
-
-  [['N',90],['S',270],['E',0],['O',180]].forEach(([nm,ang])=>{
-    const a=toRad(ang),lx=cx+Math.cos(a)*(R+14),ly=cy+Math.sin(a)*(R+14);
-    ctx.fillStyle=LGRAY;ctx.font='9px sans-serif';ctx.textAlign='center';ctx.fillText(nm,lx,ly+3);
+  // Anillos de altitud (90°, 60°, 30°, horizonte)
+  [1,0.67,0.33].forEach((f,i)=>{
+    ctx.strokeStyle=i===2?'#8ab0d0':'#b8d0e8';ctx.lineWidth=i===2?1:0.5;
+    ctx.setLineDash(i===2?[]:[3,4]);
+    ctx.beginPath();ctx.arc(cx,cy,R*f,0,Math.PI*2);ctx.stroke();
+    ctx.setLineDash([]);
+    if(i<2){const lbl=['30°','60°'][i];ctx.fillStyle='#88aac8';ctx.font='7px sans-serif';ctx.textAlign='left';ctx.fillText(lbl,cx+R*f+2,cy-2);}
   });
 
-  function drawPath(doy,col){
+  // Ejes + labels cardinales
+  [['N',90],['S',270],['E',0],['O',180]].forEach(([nm,ang])=>{
+    const a=toRad(ang);
+    ctx.strokeStyle='#b0c8e0';ctx.lineWidth=0.5;
+    ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(a)*R,cy+Math.sin(a)*R);ctx.stroke();
+    const lx=cx+Math.cos(a)*(R+13),ly=cy+Math.sin(a)*(R+13);
+    ctx.fillStyle=nm==='N'?ACCENT:'#444';
+    ctx.font=nm==='N'?'bold 9px sans-serif':'9px sans-serif';
+    ctx.textAlign='center';ctx.fillText(nm,lx,ly+3);
+  });
+
+  function drawPath(doy,col,lw){
     const pts=[];
     for(let s=0;s<300;s++){
       const hr=4+s*(16/299);
@@ -479,16 +524,32 @@ function drawSunPath(lat){
       pts.push({x:cx+r*Math.sin(toRad(az)),y:cy+r*Math.cos(toRad(az))});
     }
     if(pts.length<2)return;
-    ctx.strokeStyle=col;ctx.lineWidth=1.4;
+    ctx.strokeStyle=col;ctx.lineWidth=lw||1.6;
     ctx.beginPath();ctx.moveTo(pts[0].x,pts[0].y);
     pts.forEach(p=>ctx.lineTo(p.x,p.y));ctx.stroke();
   }
-  drawPath(172,'#4a90d9');
-  drawPath(80,'#7fc97f');
-  drawPath(355,RED);
+  drawPath(172,'#4a90d9',1.4);
+  drawPath(80,'#2a9a50',1.6);
+  drawPath(355,'#c84020',1.4);
 
-  const{alt:a0}=sunAltAz(lat,80,12);
-  ctx.fillStyle=ACCENT;ctx.beginPath();ctx.arc(cx,cy+R*(1-a0/90),5,0,Math.PI*2);ctx.fill();
+  // Marcadores de hora en equinoccio
+  [6,9,12,15,18].forEach(hr=>{
+    const{alt,az}=sunAltAz(lat,80,hr);
+    if(alt<0)return;
+    const r=R*(1-alt/90);
+    const px=cx+r*Math.sin(toRad(az)),py=cy+r*Math.cos(toRad(az));
+    ctx.fillStyle='#2a9a50';ctx.beginPath();ctx.arc(px,py,2.5,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#1a6040';ctx.font='7px sans-serif';ctx.textAlign='center';
+    ctx.fillText(hr+'h',px,py-5);
+  });
+
+  // Sol al mediodía equinoccio
+  const{alt:a0,az:az0}=sunAltAz(lat,80,12);
+  const sr=R*(1-a0/90);
+  const spx=cx+sr*Math.sin(toRad(az0)),spy=cy+sr*Math.cos(toRad(az0));
+  const sg=ctx.createRadialGradient(spx,spy,0,spx,spy,8);
+  sg.addColorStop(0,'#ffee88');sg.addColorStop(1,'#f0a020');
+  ctx.fillStyle=sg;ctx.beginPath();ctx.arc(spx,spy,6,0,Math.PI*2);ctx.fill();
 }
 
 function renderAll(lat,mdata){

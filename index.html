@@ -434,7 +434,7 @@ async function drawIso(lat,lon,name){
         const lbl=document.createElement('div');
         lbl.style.cssText='position:absolute;font-size:7px;color:#333320;pointer-events:none;z-index:13;white-space:nowrap;background:rgba(255,255,255,0.88);padding:1px 4px;border-radius:2px;transform:translate(-50%,-50%);border:0.5px solid #ccc8b0';
         lbl.textContent=s.name;
-        lbl.dataset.wx=mp.x;lbl.dataset.wy=0.5;lbl.dataset.wz=mp.z;
+        lbl.dataset.wx=mp.x;lbl.dataset.wy=32;lbl.dataset.wz=mp.z;
         cont.appendChild(lbl);streetLabels.push(lbl);
       }
     }catch(e){}
@@ -554,110 +554,117 @@ async function drawIso(lat,lon,name){
 
 function drawWindRose(mdata){
   const cv=document.getElementById('wind-canvas');
-  // Diferir hasta que el layout esté listo
-  requestAnimationFrame(()=>{
-    const dpr=Math.min(window.devicePixelRatio||1,2);
-    const DW=Math.max(cv.parentElement.offsetWidth-20,260);
-    const DH=250;
-    cv.width=DW*dpr;cv.height=DH*dpr;
-    cv.style.width=DW+'px';cv.style.height=DH+'px';
-    const ctx=cv.getContext('2d');ctx.scale(dpr,dpr);
-    const W=DW,H=DH,cx=W/2,cy=H/2+6,R=Math.min(W,H)*0.33;
+  const dpr=Math.min(window.devicePixelRatio||1,2);
+  const par=cv.parentElement;
+  const DW=Math.max((par.offsetWidth||par.clientWidth||380)-20,260);
+  const DH=250;
+  cv.width=DW*dpr; cv.height=DH*dpr;
+  cv.style.width=DW+'px'; cv.style.height=DH+'px';
+  const ctx=cv.getContext('2d');
+  ctx.setTransform(1,0,0,1,0,0); // reset transform
+  ctx.scale(dpr,dpr);
+  const W=DW,H=DH,cx=W/2,cy=H/2+6,R=Math.min(W,H)*0.34;
 
-    ctx.fillStyle=PANEL;ctx.fillRect(0,0,W,H);
-    if(!mdata){
-      ctx.fillStyle=GRAY;ctx.font='12px sans-serif';
-      ctx.textAlign='center';ctx.textBaseline='middle';
-      ctx.fillText('Sin datos',cx,cy);return;
+  // fondo inmediato para confirmar que el canvas funciona
+  ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,W,H);
+
+  if(!mdata){
+    ctx.fillStyle='#888'; ctx.font='12px sans-serif';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('Sin datos',cx,cy); return;
+  }
+
+  // Acumular velocidad por 16 bins de dirección
+  const bins=Array(16).fill(0);
+  mdata.forEach(m=>{
+    if(m.wd!=null && m.ws!=null){
+      const b=Math.round(((m.wd%360)+360)%360/22.5)%16;
+      bins[b]+=m.ws;
     }
-
-    // Acumulado de velocidad por dirección (16 bins) — igual al original probado
-    const bins=Array(16).fill(0);
-    mdata.forEach(m=>{
-      if(m.wd!=null&&m.ws!=null){
-        const b=Math.round(((m.wd%360)+360)%360/22.5)%16;
-        bins[b]+=m.ws;
-      }
-    });
-    const maxB=Math.max(...bins)||1;
-    const wsVals=mdata.map(m=>m.ws).filter(v=>v!=null);
-
-    function draw(prog){
-      ctx.clearRect(0,0,W,H);
-      ctx.fillStyle=PANEL;ctx.fillRect(0,0,W,H);
-
-      // Fondo del círculo
-      ctx.fillStyle='#f4f1ec';
-      ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.fill();
-
-      // Anillos de referencia
-      [0.33,0.66,1].forEach((f,i)=>{
-        ctx.strokeStyle=i===2?'#b0a898':'#ddd8d0';
-        ctx.lineWidth=i===2?1:0.5;
-        ctx.setLineDash(i===2?[]:[3,4]);
-        ctx.beginPath();ctx.arc(cx,cy,R*f,0,Math.PI*2);ctx.stroke();
-        ctx.setLineDash([]);
-        const spd=Math.round(maxB*f);
-        ctx.fillStyle='#aaa';ctx.font='7px sans-serif';
-        ctx.textAlign='left';ctx.textBaseline='middle';
-        ctx.fillText(spd+' km/h',cx+R*f+3,cy-1);
-      });
-
-      // Ejes (16 radios)
-      for(let i=0;i<16;i++){
-        const a=toRad(90-i*22.5);
-        ctx.strokeStyle=i%2===0?'#ccc8c0':'#e8e4e0';ctx.lineWidth=0.5;
-        ctx.beginPath();ctx.moveTo(cx,cy);
-        ctx.lineTo(cx+Math.cos(a)*R,cy-Math.sin(a)*R);ctx.stroke();
-      }
-
-      // Pétalos — color por intensidad, con borde de grosor 1px
-      bins.forEach((v,i)=>{
-        if(!v)return;
-        const r=R*(v/maxB)*prog;
-        if(r<1)return;
-        const ang=toRad(90-i*22.5);
-        const half=toRad(11.25);
-        const t=v/maxB;
-        const col=t>0.7?'#c84020':t>0.4?'#c8900a':'#1a6db0';
-        ctx.fillStyle=col+'e0';  // ~88% opacidad
-        ctx.strokeStyle=col;ctx.lineWidth=1;
-        ctx.beginPath();ctx.moveTo(cx,cy);
-        ctx.arc(cx,cy,r,-(ang+half),-(ang-half),false);
-        ctx.closePath();ctx.fill();ctx.stroke();
-      });
-
-      // Labels cardinales
-      [['N',90],['NE',45],['E',0],['SE',-45],
-       ['S',-90],['SO',-135],['O',180],['NO',135]].forEach(([nm,ad])=>{
-        const a=toRad(ad);
-        const lx=cx+Math.cos(a)*(R+17),ly=cy-Math.sin(a)*(R+17);
-        ctx.fillStyle=nm==='N'?ACCENT:'#333';
-        ctx.font=nm==='N'?'bold 11px sans-serif':'8px sans-serif';
-        ctx.textAlign='center';ctx.textBaseline='middle';
-        ctx.fillText(nm,lx,ly);
-      });
-
-      // Centro
-      ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(cx,cy,6,0,Math.PI*2);ctx.fill();
-      ctx.strokeStyle=ACCENT;ctx.lineWidth=1.5;
-      ctx.beginPath();ctx.arc(cx,cy,6,0,Math.PI*2);ctx.stroke();
-    }
-
-    // Animación de entrada ease-out cúbico
-    const dur=1100,t0=performance.now();
-    (function tick(now){
-      const p=Math.min((now-t0)/dur,1);
-      draw(1-Math.pow(1-p,3));
-      if(p<1)requestAnimationFrame(tick);
-    })(performance.now());
-
-    // Leyenda
-    const maxIdx=bins.indexOf(maxB);
-    const wsAvg=avg(wsVals);
-    document.getElementById('wind-legend').innerHTML=
-      `<span style="color:#888;font-size:10px">Predominante: <b style="color:${ACCENT}">${windDirName(maxIdx*22.5)}</b>&nbsp;·&nbsp;Media: <b style="color:${ACCENT2}">${fmt(wsAvg,1)} km/h</b></span>`;
   });
+  const maxB=Math.max(...bins)||1;
+  const wsVals=mdata.map(m=>m.ws).filter(v=>v!=null);
+
+  function drawStatic(){
+    // Fondo del círculo
+    ctx.fillStyle='#f5f2ed';
+    ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2); ctx.fill();
+    // Anillos
+    [0.33,0.66,1].forEach((f,i)=>{
+      ctx.strokeStyle=i===2?'#a09888':'#ddd8d0';
+      ctx.lineWidth=i===2?1:0.5;
+      ctx.setLineDash(i===2?[]:[3,4]);
+      ctx.beginPath(); ctx.arc(cx,cy,R*f,0,Math.PI*2); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle='rgba(100,100,100,0.7)';
+      ctx.font='7px sans-serif'; ctx.textAlign='left'; ctx.textBaseline='middle';
+      ctx.fillText(Math.round(maxB*f)+' km',cx+R*f+2,cy);
+    });
+    // 16 radios
+    for(let i=0;i<16;i++){
+      const a=toRad(90-i*22.5);
+      ctx.strokeStyle=i%2===0?'rgba(180,170,160,0.8)':'rgba(220,215,210,0.6)';
+      ctx.lineWidth=0.5;
+      ctx.beginPath(); ctx.moveTo(cx,cy);
+      ctx.lineTo(cx+Math.cos(a)*R, cy-Math.sin(a)*R); ctx.stroke();
+    }
+    // Labels cardinales
+    [['N',90],['NE',45],['E',0],['SE',-45],
+     ['S',-90],['SO',-135],['O',180],['NO',135]].forEach(([nm,ad])=>{
+      const a=toRad(ad);
+      const lx=cx+Math.cos(a)*(R+17), ly=cy-Math.sin(a)*(R+17);
+      ctx.fillStyle=nm==='N'?ACCENT:'#333';
+      ctx.font=nm==='N'?'bold 11px sans-serif':'8px sans-serif';
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(nm,lx,ly);
+    });
+  }
+
+  function drawPetals(prog){
+    bins.forEach((v,i)=>{
+      if(!v) return;
+      const r=R*(v/maxB)*prog;
+      if(r<0.5) return;
+      const ang=toRad(90-i*22.5);
+      const half=toRad(11.25);
+      const t=v/maxB;
+      let fillCol, strokeCol;
+      if(t>0.7){
+        fillCol='rgba(200,64,32,0.85)'; strokeCol='rgba(200,64,32,1)';
+      } else if(t>0.4){
+        fillCol='rgba(200,144,10,0.85)'; strokeCol='rgba(200,144,10,1)';
+      } else {
+        fillCol='rgba(26,109,176,0.85)'; strokeCol='rgba(26,109,176,1)';
+      }
+      ctx.fillStyle=fillCol; ctx.strokeStyle=strokeCol; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(cx,cy);
+      ctx.arc(cx,cy,r, -(ang+half), -(ang-half), false);
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+    });
+    // Centro
+    ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(cx,cy,6,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle=ACCENT; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.arc(cx,cy,6,0,Math.PI*2); ctx.stroke();
+  }
+
+  // Animación: redibujar fondo + pétalos crecientes
+  const dur=1000, t0=performance.now();
+  function tick(now){
+    const p=Math.min((now-t0)/dur,1);
+    const ease=1-Math.pow(1-p,3);
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
+    drawStatic();
+    drawPetals(ease);
+    if(p<1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+
+  // Leyenda
+  const wsAvg=avg(wsVals);
+  const maxIdx=bins.indexOf(maxB);
+  document.getElementById('wind-legend').innerHTML=
+    `<span style="color:#888;font-size:10px">Predominante: <b style="color:${ACCENT}">${windDirName(maxIdx*22.5)}</b>&nbsp;·&nbsp;Media: <b style="color:${ACCENT2}">${fmt(wsAvg,1)} km/h</b></span>`;
 }
 
 function drawSunPath(lat){

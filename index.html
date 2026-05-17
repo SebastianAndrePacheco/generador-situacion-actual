@@ -273,7 +273,7 @@ function ll2xz(lat,lon,clat,clon){
 
 async function fetchOSMData(lat,lon){
   const R=150;
-  const q=`[out:json][timeout:25];(way["building"](around:${R},${lat},${lon});way["leisure"="park"](around:${R},${lat},${lon});way["landuse"~"^(grass|park|garden|green)$"](around:${R},${lat},${lon});way["natural"~"^(wood|grassland|scrub)$"](around:${R},${lat},${lon});way["highway"](around:${R},${lat},${lon}););out body;>;out skel qt;`;
+  const q=`[out:json][timeout:25];(way["building"](around:${R},${lat},${lon});way["leisure"="park"](around:${R},${lat},${lon});way["landuse"~"^(grass|park|garden|green)$"](around:${R},${lat},${lon});way["natural"~"^(wood|grassland|scrub)$"](around:${R},${lat},${lon});way["highway"~"^(primary|secondary|tertiary|residential|unclassified|living_street|trunk|motorway)$"](around:${R},${lat},${lon}););out body;>;out skel qt;`;
   try{
     const r=await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(q)}`);
     if(!r.ok)throw new Error(r.status);
@@ -308,6 +308,15 @@ function parseOSM(osm,clat,clon){
     }
   });
   return{buildings,vegetation,streets};
+}
+
+function ptInPoly(px,pz,pts){
+  let inside=false;
+  for(let i=0,j=pts.length-1;i<pts.length;j=i++){
+    const xi=pts[i].x,zi=pts[i].z,xj=pts[j].x,zj=pts[j].z;
+    if((zi>pz)!==(zj>pz)&&px<(xj-xi)*(pz-zi)/(zj-zi)+xi)inside=!inside;
+  }
+  return inside;
 }
 
 async function drawIso(lat,lon,name){
@@ -392,33 +401,32 @@ async function drawIso(lat,lon,name){
 
   // ── CALLES ───────────────────────────────────────────────────────────────
   const hwMeta={
-    motorway:  {w:9, col:0x9e9a8c},
-    trunk:     {w:9, col:0x9e9a8c},
-    primary:   {w:8, col:0xb0ac9c},
-    secondary: {w:7, col:0xbcb8a8},
-    tertiary:  {w:6, col:0xc8c4b4},
-    residential:{w:5,col:0xd4d0c0},
-    unclassified:{w:5,col:0xd4d0c0},
+    motorway:    {w:9, col:0x9e9a8c},
+    trunk:       {w:9, col:0x9e9a8c},
+    primary:     {w:8, col:0xb0ac9c},
+    secondary:   {w:7, col:0xbcb8a8},
+    tertiary:    {w:6, col:0xc8c4b4},
+    residential: {w:5, col:0xd4d0c0},
+    unclassified:{w:5, col:0xd4d0c0},
     living_street:{w:4,col:0xdad6c8},
-    service:   {w:3, col:0xccc8b8},
-    footway:   {w:1.5,col:0xddd0b8},
-    path:      {w:1.5,col:0xddd0b8},
-    cycleway:  {w:2, col:0xc8d4c0},
-    steps:     {w:2, col:0xddd0b8},
   };
   const roadMat={};
   streets.forEach(s=>{
     try{
-      const{w,col}=hwMeta[s.type]||{w:4,col:0xccc8b8};
+      const meta=hwMeta[s.type];
+      if(!meta)return; // ignorar tipos no listados
+      const{w,col}=meta;
       if(!roadMat[col])roadMat[col]=new THREE.MeshLambertMaterial({color:col});
       const mat=roadMat[col];
-      // Renderizar cada segmento como caja plana con ancho real
+      // Renderizar cada segmento como caja plana, skip si midpoint está en edificio
       for(let i=0;i<s.pts.length-1;i++){
         const a=s.pts[i],b=s.pts[i+1];
         const dx=b.x-a.x,dz=b.z-a.z;
         const len=Math.sqrt(dx*dx+dz*dz);
         if(len<0.3)continue;
         const mx=(a.x+b.x)/2,mz=(a.z+b.z)/2;
+        // No renderizar si el centro del segmento cae dentro de un edificio
+        if(buildings.some(bld=>ptInPoly(mx,mz,bld.pts)))continue;
         const geo=new THREE.BoxGeometry(w,0.18,len);
         const mesh=new THREE.Mesh(geo,mat);
         mesh.position.set(mx,0.09,mz);

@@ -6,173 +6,267 @@
 <title>Generador — Situación Actual</title>
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4/dist/maplibre-gl.css">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#f0ede8;
+  --bg:#f5f3ef;
+  --bg2:#eceae5;
   --surface:#ffffff;
-  --border:#e4dfd8;
-  --border-md:#d0c9c0;
-  --text:#1c1917;
-  --text-2:#6b6560;
-  --text-3:#a09a94;
-  --amber:#b5790a;
-  --amber-light:#fdf3dc;
-  --amber-dark:#7c5207;
-  --blue:#1d5fa8;
-  --blue-light:#e8f1fb;
-  --teal:#0a8272;
-  --teal-light:#e0f5f2;
-  --red:#b82020;
-  --red-light:#fdeaea;
-  --orange:#c05018;
-  --orange-light:#fdf0e8;
-  --green:#1a7a38;
-  --green-light:#e6f5ec;
-  --shadow-sm:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
-  --shadow-md:0 4px 12px rgba(0,0,0,.08),0 2px 4px rgba(0,0,0,.04);
-  --radius:10px;
-  --radius-sm:6px;
+  --border:#e2ddd6;
+  --text:#18160f;
+  --text-2:#706a62;
+  --text-3:#b0a89e;
+  --amber:#c28b12;
+  --amber-dim:#fdf5e0;
+  --blue:#1a5c9e;
+  --blue-dim:#e5f0fc;
+  --teal:#0a7a6a;
+  --teal-dim:#e0f4f0;
+  --red:#b01c1c;
+  --red-dim:#fce8e8;
+  --orange:#b84a14;
+  --orange-dim:#fdf0e6;
+  --green:#166b30;
+  --green-dim:#e5f5eb;
+  --r:12px;--r-sm:7px;--r-xs:5px;
+  --sh:0 1px 4px rgba(0,0,0,.07),0 0 1px rgba(0,0,0,.06);
+  --sh-md:0 4px 16px rgba(0,0,0,.09),0 1px 3px rgba(0,0,0,.05);
 }
-body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;padding:16px;font-size:13px;line-height:1.5}
 
-/* ── Top bar ─────────────────────────────────────── */
-.top-bar{display:flex;align-items:center;gap:8px;margin-bottom:18px;flex-wrap:wrap}
-.top-bar input{background:var(--surface);border:1.5px solid var(--border);color:var(--text);padding:7px 11px;border-radius:var(--radius-sm);font-size:13px;font-family:inherit;outline:none;transition:border-color .15s}
-.top-bar input:focus{border-color:var(--amber)}
-.top-bar input[type=number]{width:130px}
-.top-bar input[type=text]{width:210px}
-.btn{background:var(--amber);color:#fff;border:none;padding:8px 18px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s,transform .1s;white-space:nowrap}
-.btn:hover{background:var(--amber-dark)}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;padding:20px;font-size:13px;line-height:1.5;min-width:360px}
+
+/* ══ TOP BAR ══════════════════════════════════════════ */
+.top-bar{
+  display:flex;align-items:center;gap:8px;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);padding:10px 14px;
+  margin-bottom:20px;flex-wrap:wrap;box-shadow:var(--sh)
+}
+.top-bar input{
+  background:var(--bg);border:1.5px solid var(--border);color:var(--text);
+  padding:7px 11px;border-radius:var(--r-sm);font-size:13px;
+  font-family:inherit;outline:none;transition:border-color .15s
+}
+.top-bar input:focus{border-color:var(--amber);background:var(--surface)}
+.top-bar input[type=number]{width:125px}
+.top-bar input[type=text]{width:200px}
+.btn{
+  background:var(--amber);color:#fff;border:none;
+  padding:8px 20px;border-radius:var(--r-sm);font-size:13px;
+  font-weight:600;cursor:pointer;font-family:inherit;
+  transition:filter .15s,transform .1s;white-space:nowrap
+}
+.btn:hover{filter:brightness(1.1)}
 .btn:active{transform:scale(.97)}
-.btn-ghost{background:transparent;color:var(--amber);border:1.5px solid var(--amber)}
-.btn-ghost:hover{background:var(--amber-light)}
-.btn-blue{background:var(--blue)}
-.btn-blue:hover{background:#174e8e}
-.status{font-size:12px;color:var(--text-3);margin-left:auto;font-weight:500}
+.btn-outline{background:transparent;color:var(--blue);border:1.5px solid var(--blue)}
+.btn-outline:hover{background:var(--blue-dim);filter:none}
+.status-chip{
+  margin-left:auto;font-size:11px;color:var(--text-3);
+  padding:4px 10px;border-radius:20px;background:var(--bg);
+  border:1px solid var(--border);font-weight:500;white-space:nowrap
+}
 
-/* ── Page header ─────────────────────────────────── */
-.page-header{display:flex;align-items:baseline;gap:12px;margin-bottom:14px}
-.page-header h1{font-size:20px;font-weight:700;letter-spacing:-.3px;color:var(--text)}
-.page-header .subtitle{font-size:12px;color:var(--text-3);font-weight:400}
-.sep{height:1.5px;background:linear-gradient(90deg,var(--amber) 0%,transparent 60%);border-radius:2px;margin-bottom:14px;opacity:.5}
+/* ══ PAGE HEADER ══════════════════════════════════════ */
+.page-header{margin-bottom:16px}
+.ph-top{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.ph-top h1{font-size:22px;font-weight:800;letter-spacing:-.5px;color:var(--text)}
+.ph-loc{
+  font-size:12px;color:var(--text-2);
+  background:var(--bg2);border-radius:20px;
+  padding:3px 10px;border:1px solid var(--border)
+}
+.sep{height:2px;background:linear-gradient(90deg,var(--amber),var(--amber-dim) 50%,transparent);border-radius:2px}
 
-/* ── Info bar ────────────────────────────────────── */
-.info-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
-.info-pill{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:8px 12px;display:flex;flex-direction:column;min-width:120px;flex:1;box-shadow:var(--shadow-sm)}
-.ip-lbl{font-size:9px;font-weight:700;color:var(--amber);letter-spacing:.9px;margin-bottom:3px;text-transform:uppercase}
-.ip-val{font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* ══ INFO PILLS ═══════════════════════════════════════ */
+.info-bar{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}
+.info-pill{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r-sm);padding:9px 14px;
+  display:flex;flex-direction:column;min-width:130px;flex:1;
+  box-shadow:var(--sh)
+}
+.ip-lbl{
+  font-size:8.5px;font-weight:700;color:var(--text-3);
+  letter-spacing:1px;margin-bottom:4px;text-transform:uppercase
+}
+.ip-val{font-size:12.5px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-/* ── Current conditions ──────────────────────────── */
-.curr-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin-bottom:12px}
-.curr-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:12px 10px;text-align:center;box-shadow:var(--shadow-sm);transition:box-shadow .15s}
-.curr-card:hover{box-shadow:var(--shadow-md)}
-.curr-icon{font-size:18px;margin-bottom:4px;line-height:1}
-.curr-val{font-size:18px;font-weight:700;margin-bottom:2px;line-height:1.15;letter-spacing:-.5px}
+/* ══ CURRENT CONDITIONS ═══════════════════════════════ */
+.curr-section-label{
+  font-size:10px;font-weight:700;color:var(--text-3);
+  letter-spacing:.8px;text-transform:uppercase;
+  margin-bottom:8px
+}
+.curr-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-bottom:20px}
+.curr-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);padding:14px 12px 12px;
+  text-align:center;box-shadow:var(--sh);
+  transition:transform .15s,box-shadow .15s;
+  border-top-width:3px
+}
+.curr-card:hover{transform:translateY(-2px);box-shadow:var(--sh-md)}
+.curr-icon{font-size:20px;line-height:1;margin-bottom:6px}
+.curr-val{font-size:20px;font-weight:800;margin-bottom:3px;line-height:1;letter-spacing:-.8px}
 .curr-lbl{font-size:9px;color:var(--text-3);text-transform:uppercase;letter-spacing:.6px;font-weight:600}
-.curr-sub{font-size:10px;color:var(--text-2);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.curr-sub{font-size:10px;color:var(--text-2);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
-/* ── Main grid ───────────────────────────────────── */
-.main-grid{display:grid;grid-template-columns:210px 1fr 240px;gap:10px}
-.panel{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow-sm)}
-.panel-title{font-size:10px;font-weight:700;color:var(--text-2);margin-bottom:10px;letter-spacing:.9px;text-transform:uppercase;display:flex;align-items:center;gap:5px}
-.panel-title .pt-badge{font-size:8px;font-weight:500;color:var(--text-3);text-transform:none;letter-spacing:0;padding:1px 5px;background:var(--bg);border-radius:10px}
+/* ══ SECTION HEADER (reutilizable) ════════════════════ */
+.section-hdr{
+  display:flex;align-items:center;gap:8px;
+  margin-bottom:12px
+}
+.section-hdr h2{font-size:11px;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:.8px}
+.section-hdr .badge{
+  font-size:9px;font-weight:500;color:var(--text-3);
+  background:var(--bg2);border-radius:10px;
+  padding:2px 8px;border:1px solid var(--border)
+}
+.section-hdr .line{flex:1;height:1px;background:var(--border)}
+
+/* ══ PANEL ════════════════════════════════════════════ */
+.panel{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);padding:16px;box-shadow:var(--sh)
+}
+.panel-title{
+  font-size:10px;font-weight:700;color:var(--text-2);
+  margin-bottom:12px;letter-spacing:.8px;text-transform:uppercase;
+  display:flex;align-items:center;gap:6px
+}
+.panel-title .badge{
+  font-size:8px;font-weight:500;color:var(--text-3);
+  background:var(--bg);border-radius:10px;
+  padding:1px 6px;border:1px solid var(--border)
+}
+
+/* ══ MAIN GRID ════════════════════════════════════════ */
+.main-grid{display:grid;grid-template-columns:220px 1fr 250px;gap:12px}
 .clima-panel{grid-column:1/2;grid-row:2/3}
 .iso-panel{grid-column:2/3;grid-row:2/3;display:flex;flex-direction:column}
-.side-panels{grid-column:3/4;grid-row:2/3;display:grid;grid-template-rows:auto 1fr;gap:10px}
+.side-panels{grid-column:3/4;grid-row:2/3;display:grid;grid-template-rows:auto 1fr;gap:12px}
 .cards-row{grid-column:2/-1;display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 
-/* ── Stat cards (4 top cards) ────────────────────── */
-.card{background:var(--surface);border-radius:var(--radius);overflow:hidden;border:1.5px solid var(--border);box-shadow:var(--shadow-sm)}
-.card-head{padding:8px 12px;font-size:9px;font-weight:700;text-align:center;color:#fff;letter-spacing:.8px;text-transform:uppercase}
-.card-body{padding:8px 10px}
-.card-row{display:flex;justify-content:space-between;align-items:center;border-radius:4px;padding:4px 6px;margin-bottom:2px}
+/* ══ STAT CARDS ═══════════════════════════════════════ */
+.card{
+  background:var(--surface);border-radius:var(--r);
+  overflow:hidden;border:1px solid var(--border);box-shadow:var(--sh)
+}
+.card-head{
+  padding:10px 14px;font-size:9.5px;font-weight:700;
+  text-align:center;color:#fff;letter-spacing:.5px
+}
+.card-body{padding:8px}
+.card-row{
+  display:flex;justify-content:space-between;align-items:baseline;
+  border-radius:var(--r-xs);padding:5px 8px;margin-bottom:2px
+}
 .card-row:nth-child(odd){background:var(--bg)}
-.card-row .k{font-size:10px;color:var(--text-2);font-weight:400}
-.card-row .v{font-size:11px;font-weight:700}
+.card-row .k{font-size:10px;color:var(--text-2)}
+.card-row .v{font-size:11px;font-weight:700;text-align:right;max-width:55%}
 
-/* ── Clima panel rows ────────────────────────────── */
-.clima-stat{display:flex;flex-direction:column;padding:6px 8px;border-radius:6px;margin-bottom:4px}
+/* ══ CLIMA PANEL ══════════════════════════════════════ */
+.clima-stat{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:6px 10px;border-radius:var(--r-xs);margin-bottom:3px
+}
 .clima-stat:nth-child(odd){background:var(--bg)}
-.clima-stat .cs-val{font-size:13px;font-weight:700;line-height:1.2}
-.clima-stat .cs-lbl{font-size:9px;color:var(--text-3);margin-top:1px}
-
-/* ── Bar chart ───────────────────────────────────── */
-.bar-chart{margin-top:10px}
-.bar-chart-title{font-size:9px;color:var(--text-3);font-weight:600;margin-bottom:5px;letter-spacing:.4px}
-.bar-row{display:flex;align-items:center;gap:5px;margin-bottom:3px}
+.clima-stat .cs-val{font-size:14px;font-weight:700;line-height:1}
+.clima-stat .cs-lbl{font-size:9px;color:var(--text-3);text-align:right;max-width:55%}
+.bar-chart{margin-top:12px}
+.bar-chart-title{font-size:9px;color:var(--text-3);font-weight:600;margin-bottom:6px;letter-spacing:.4px}
+.bar-row{display:flex;align-items:center;gap:5px;margin-bottom:4px}
 .bar-label{font-size:9px;color:var(--text-3);width:22px;text-align:right;flex-shrink:0}
-.bar-track{flex:1;background:var(--bg);border-radius:3px;height:8px;position:relative;overflow:hidden}
-.bar-max{position:absolute;top:0;left:0;height:8px;border-radius:3px;background:var(--red);opacity:.55}
-.bar-min{position:absolute;top:0;left:0;height:8px;border-radius:3px;background:var(--blue);opacity:.55}
+.bar-track{flex:1;background:var(--bg2);border-radius:3px;height:8px;position:relative;overflow:hidden}
+.bar-max{position:absolute;top:0;left:0;height:8px;border-radius:3px;background:var(--red);opacity:.5}
+.bar-min{position:absolute;top:0;left:0;height:8px;border-radius:3px;background:var(--blue);opacity:.5}
 .bar-val{font-size:9px;color:var(--text-3);width:40px;flex-shrink:0;text-align:right}
 
-/* ── Map ─────────────────────────────────────────── */
-#iso-canvas{position:relative;overflow:hidden;border-radius:6px;flex:1;min-height:300px}
+/* ══ MAP ══════════════════════════════════════════════ */
+#iso-canvas{position:relative;overflow:hidden;border-radius:var(--r-sm);flex:1;min-height:300px}
 #iso-canvas canvas{display:block}
-.iso-hint{position:absolute;bottom:6px;right:8px;font-size:9px;color:rgba(255,255,255,.5);pointer-events:none;text-shadow:0 1px 2px rgba(0,0,0,.4)}
-.sun-controls{display:none;padding:8px 4px 0;gap:8px;align-items:center}
-.sun-controls span{font-size:9px;font-weight:700;white-space:nowrap;color:var(--amber)}
-.sun-controls select{background:var(--surface);color:var(--text);border:1.5px solid var(--border);border-radius:4px;font-size:10px;padding:2px 5px;font-family:inherit}
+.iso-hint{position:absolute;bottom:8px;right:10px;font-size:9px;color:rgba(255,255,255,.55);pointer-events:none;text-shadow:0 1px 3px rgba(0,0,0,.5)}
+.sun-controls{display:none;padding:10px 2px 0;gap:8px;align-items:center}
+.sun-controls label{font-size:9px;font-weight:700;white-space:nowrap;color:var(--amber)}
+.sun-controls select{background:var(--surface);color:var(--text);border:1.5px solid var(--border);border-radius:var(--r-xs);font-size:10px;padding:3px 6px;font-family:inherit}
 
-/* ── Bottom grid ─────────────────────────────────── */
-.bottom-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:10px}
-.diag-title{font-size:10px;font-weight:700;color:var(--text-2);text-align:center;margin-bottom:8px;letter-spacing:.7px;text-transform:uppercase}
-.mini-legend{display:flex;gap:10px;justify-content:center;margin-top:6px;flex-wrap:wrap}
+/* ══ AQI PANEL ════════════════════════════════════════ */
+.aqi-hero{text-align:center;padding:10px 0 14px;border-bottom:1px solid var(--border);margin-bottom:12px}
+.aqi-num{font-size:44px;font-weight:800;line-height:1;letter-spacing:-2px}
+.aqi-lbl{font-size:13px;font-weight:700;margin-top:4px}
+.aqi-sub{font-size:9px;color:var(--text-3);margin-top:2px}
+.pollutant-row{margin-bottom:8px}
+.pollutant-header{display:flex;justify-content:space-between;font-size:10px;margin-bottom:3px}
+.pollutant-name{color:var(--text-2);font-weight:500}
+.pollutant-val{font-weight:700}
+.pollutant-bar{background:var(--bg2);border-radius:3px;height:5px;overflow:hidden}
+.pollutant-fill{height:5px;border-radius:3px;transition:width .6s ease}
+
+/* ══ SEISMIC PANEL ════════════════════════════════════ */
+.seis-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px}
+.seis-stat{background:var(--bg);border-radius:var(--r-sm);padding:9px 4px;text-align:center;border:1px solid var(--border)}
+.seis-stat .sv{font-size:22px;font-weight:800;line-height:1;letter-spacing:-1px}
+.seis-stat .sl{font-size:8px;color:var(--text-3);letter-spacing:.5px;margin-top:3px;font-weight:600;text-transform:uppercase}
+.seis-sec{font-size:8.5px;font-weight:700;color:var(--text-3);letter-spacing:.7px;margin:10px 0 5px;text-transform:uppercase}
+.seis-bin{display:flex;align-items:center;gap:5px;margin-bottom:4px}
+.seis-bin-lbl{font-size:9px;color:var(--text-2);width:32px;flex-shrink:0;font-weight:600}
+.seis-bin-track{flex:1;background:var(--bg2);border-radius:3px;height:7px;overflow:hidden}
+.seis-bin-fill{height:7px;border-radius:3px}
+.seis-bin-n{font-size:9px;font-weight:700;width:24px;text-align:right;flex-shrink:0}
+.seis-event{
+  display:flex;align-items:center;gap:7px;
+  background:var(--bg);border-radius:var(--r-xs);
+  padding:6px 8px;margin-bottom:4px;border:1px solid var(--border)
+}
+.seis-mag-badge{
+  font-size:11px;font-weight:800;flex-shrink:0;
+  width:36px;padding:3px 0;text-align:center;
+  border-radius:var(--r-xs);line-height:1.2
+}
+.seis-place{font-size:9.5px;color:var(--text-2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.seis-meta{font-size:8px;color:var(--text-3);flex-shrink:0;text-align:right;line-height:1.6}
+
+/* ══ FORECAST ═════════════════════════════════════════ */
+.forecast-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:6px}
+.fc-day{text-align:center;background:var(--bg);border-radius:var(--r-sm);padding:6px 2px;border:1px solid var(--border)}
+.fc-dow{font-size:9px;font-weight:700;color:var(--text-2)}
+.fc-date{font-size:8px;color:var(--text-3);margin-bottom:3px}
+.fc-icon{font-size:18px;line-height:1.3}
+.fc-bar{height:52px;position:relative;margin:4px auto 2px;width:12px}
+.fc-tmax{font-size:10px;font-weight:700;color:var(--red)}
+.fc-tmin{font-size:10px;color:var(--blue)}
+.fc-prec{font-size:8px;color:var(--blue);margin-top:2px}
+.fc-uv{font-size:8px;margin-top:1px}
+
+/* ══ AMENITIES ════════════════════════════════════════ */
+.amenity-group{margin-bottom:10px}
+.amenity-group-label{
+  font-size:9px;font-weight:700;letter-spacing:.5px;
+  margin-bottom:5px;text-transform:uppercase;
+  display:flex;align-items:center;gap:5px
+}
+.amenity-group-label::after{content:'';flex:1;height:1px;background:var(--border)}
+.amenity-row{
+  display:flex;justify-content:space-between;align-items:center;
+  border-radius:var(--r-xs);padding:4px 8px;margin-bottom:2px
+}
+.amenity-row:nth-child(odd){background:var(--bg)}
+.amenity-row .k{font-size:10px;color:var(--text-2)}
+.amenity-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;color:#fff}
+
+/* ══ BOTTOM GRID ══════════════════════════════════════ */
+.bottom-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:12px}
+.diag-title{font-size:10px;font-weight:700;color:var(--text-2);text-align:center;margin-bottom:10px;letter-spacing:.7px;text-transform:uppercase}
+.mini-legend{display:flex;gap:10px;justify-content:center;margin-top:8px;flex-wrap:wrap}
 .mini-legend span{font-size:10px;color:var(--text-2);display:flex;align-items:center;gap:4px}
 .dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0}
 
-/* ── AQI panel ───────────────────────────────────── */
-.aqi-score{text-align:center;padding:8px 0 10px}
-.aqi-num{font-size:36px;font-weight:700;line-height:1;letter-spacing:-1px}
-.aqi-lbl{font-size:12px;font-weight:600;margin-top:2px}
-.aqi-sub{font-size:9px;color:var(--text-3);margin-top:1px}
-.pollutant-row{margin-bottom:6px}
-.pollutant-header{display:flex;justify-content:space-between;font-size:10px;color:var(--text-2);margin-bottom:3px}
-.pollutant-bar{background:var(--bg);border-radius:3px;height:5px;overflow:hidden}
-.pollutant-fill{height:5px;border-radius:3px}
+/* ══ FOOTER ═══════════════════════════════════════════ */
+.footer{margin-top:16px;padding-top:10px;border-top:1px solid var(--border);font-size:10px;color:var(--text-3);display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px}
 
-/* ── Seismic panel ───────────────────────────────── */
-.seis-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px}
-.seis-stat{background:var(--bg);border-radius:6px;padding:8px 4px;text-align:center}
-.seis-stat .sv{font-size:20px;font-weight:700;line-height:1;letter-spacing:-1px}
-.seis-stat .sl{font-size:8px;color:var(--text-3);letter-spacing:.5px;margin-top:3px;font-weight:600;text-transform:uppercase}
-.seis-section-title{font-size:9px;font-weight:700;color:var(--text-3);letter-spacing:.6px;margin:8px 0 5px;text-transform:uppercase}
-.seis-bin{display:flex;align-items:center;gap:5px;margin-bottom:3px}
-.seis-bin-lbl{font-size:9px;color:var(--text-2);width:30px;flex-shrink:0;font-weight:500}
-.seis-bin-track{flex:1;background:var(--bg);border-radius:3px;height:7px;overflow:hidden}
-.seis-bin-fill{height:7px;border-radius:3px}
-.seis-bin-n{font-size:9px;font-weight:700;width:24px;text-align:right;flex-shrink:0}
-.seis-event{display:flex;align-items:center;gap:6px;background:var(--bg);border-radius:6px;padding:5px 7px;margin-bottom:4px;border:1px solid var(--border)}
-.seis-mag-badge{font-size:11px;font-weight:700;flex-shrink:0;width:34px;padding:2px 0;text-align:center;border-radius:4px;line-height:1.2}
-.seis-place{font-size:9px;color:var(--text-2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.seis-meta{font-size:8px;color:var(--text-3);flex-shrink:0;text-align:right;line-height:1.5}
-
-/* ── Forecast ────────────────────────────────────── */
-.forecast-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-top:4px}
-.fc-day{text-align:center;padding:2px}
-.fc-dow{font-size:9px;font-weight:700;color:var(--text-2)}
-.fc-date{font-size:8px;color:var(--text-3);margin-bottom:2px}
-.fc-cond{font-size:8px;color:var(--text-2);margin:2px 0;white-space:nowrap;overflow:hidden}
-.fc-bar{height:60px;position:relative;margin:2px auto;width:14px}
-.fc-tmax{font-size:9px;font-weight:700;color:var(--red)}
-.fc-tmin{font-size:9px;color:var(--blue)}
-.fc-prec{font-size:8px;color:var(--blue);margin-top:1px}
-.fc-uv{font-size:8px;margin-top:1px}
-
-/* ── Amenities ───────────────────────────────────── */
-.amenity-group-title{font-size:9px;font-weight:700;letter-spacing:.5px;margin:7px 0 4px;text-transform:uppercase}
-.amenity-row{display:flex;justify-content:space-between;align-items:center;border-radius:4px;padding:4px 7px;margin-bottom:2px}
-.amenity-row:nth-child(odd){background:var(--bg)}
-.amenity-row .k{font-size:10px;color:var(--text-2)}
-.amenity-badge{font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;color:#fff}
-
-/* ── Footer ──────────────────────────────────────── */
-.footer{margin-top:14px;padding-top:10px;border-top:1.5px solid var(--border);font-size:10px;color:var(--text-3);display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px}
-
-/* ── Responsive ──────────────────────────────────── */
+/* ══ RESPONSIVE ═══════════════════════════════════════ */
 @media(max-width:1100px){
-  .main-grid{grid-template-columns:190px 1fr!important}
+  .main-grid{grid-template-columns:200px 1fr!important}
   .side-panels{grid-column:1/-1;grid-row:auto;grid-template-rows:none;grid-template-columns:1fr 1fr}
   .cards-row{grid-template-columns:repeat(2,1fr)}
 }
@@ -192,14 +286,14 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;paddi
   .curr-row{grid-template-columns:repeat(2,1fr)!important}
 }
 
-/* ── Print / PDF ─────────────────────────────────── */
+/* ══ PRINT ════════════════════════════════════════════ */
 @page{size:A3 landscape;margin:8mm}
 @media print{
   .top-bar,.no-print{display:none!important}
   body{padding:4px;background:#fff}
   *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .panel{break-inside:avoid}
-  .main-grid{grid-template-columns:210px 1fr 240px!important}
+  .main-grid{grid-template-columns:220px 1fr 250px!important}
   .side-panels{grid-column:3/4;grid-row:2/3;grid-template-columns:none;grid-template-rows:auto 1fr}
   .cards-row{grid-column:2/-1;grid-template-columns:repeat(4,1fr)}
   .bottom-grid{grid-template-columns:repeat(4,1fr)}
@@ -208,52 +302,67 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;paddi
 </head>
 <body>
 
+<!-- ══ TOP BAR ════════════════════════════════════════ -->
 <div class="top-bar">
   <input id="inp-lat" type="number" step="0.0001" placeholder="Latitud" value="-12.0456">
   <input id="inp-lon" type="number" step="0.0001" placeholder="Longitud" value="-77.0282">
   <input id="inp-name" type="text" placeholder="Nombre del lugar" value="C.H. La Muralla">
-  <button class="btn" onclick="generate()">Generar análisis</button>
-  <button class="btn btn-blue no-print" onclick="window.print()">Exportar PDF</button>
-  <span class="status" id="status">Listo</span>
+  <button class="btn" onclick="generate()">▶ Generar análisis</button>
+  <button class="btn btn-outline no-print" onclick="window.print()">⬇ Exportar PDF</button>
+  <span class="status-chip" id="status">Listo</span>
 </div>
 
+<!-- ══ HEADER ════════════════════════════════════════ -->
 <div class="page-header">
-  <h1>SITUACIÓN ACTUAL</h1>
-  <span class="subtitle" id="subtitle">Ingresa coordenadas y presiona Generar análisis</span>
+  <div class="ph-top">
+    <h1>Situación Actual</h1>
+    <span class="ph-loc" id="subtitle">Ingresa coordenadas y presiona Generar análisis</span>
+  </div>
+  <div class="sep"></div>
 </div>
-<div class="sep"></div>
 
+<!-- ══ INFO PILLS ════════════════════════════════════ -->
 <div id="info-bar" class="info-bar">
   <div style="color:var(--text-3);font-size:11px;padding:4px 0">Ingresa coordenadas y presiona Generar análisis</div>
 </div>
 
+<!-- ══ CONDICIONES ACTUALES ══════════════════════════ -->
+<div class="curr-section-label">Condiciones actuales</div>
 <div id="current-row" class="curr-row" style="grid-template-columns:1fr">
-  <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:14px;color:var(--text-3);font-size:12px">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px;color:var(--text-3);font-size:12px">
     Las condiciones actuales aparecerán aquí
   </div>
 </div>
 
+<!-- ══ MAIN GRID ══════════════════════════════════════ -->
+<div class="section-hdr">
+  <h2>Análisis climático</h2><div class="line"></div>
+</div>
+
 <div class="main-grid">
+  <!-- Clima histórico -->
   <div class="panel clima-panel" id="clima-panel">
-    <div class="panel-title">Clima histórico <span class="pt-badge">ERA5 · 30 años</span></div>
+    <div class="panel-title">Clima histórico <span class="badge">ERA5 · 30 años</span></div>
     <div id="clima-rows"><div style="color:var(--text-3);font-size:11px;padding:8px">Esperando datos...</div></div>
     <div class="bar-chart" id="bar-chart"></div>
   </div>
 
+  <!-- Cards de análisis -->
   <div class="cards-row" id="cards-row">
     <div style="grid-column:1/-1;color:var(--text-3);font-size:12px;padding:8px">Presiona Generar análisis</div>
   </div>
 
+  <!-- Mapa 3D -->
   <div class="panel iso-panel" style="min-height:340px">
-    <div class="panel-title">Emplazamiento <span class="pt-badge">Mapa 3D</span></div>
-    <div id="iso-canvas" style="width:100%;flex:1;min-height:320px;position:relative;overflow:hidden;border-radius:6px">
+    <div class="panel-title">Emplazamiento <span class="badge">Mapa 3D · OSM</span></div>
+    <div id="iso-canvas" style="width:100%;flex:1;min-height:320px;position:relative;overflow:hidden;border-radius:var(--r-sm)">
       <div style="color:var(--text-3);font-size:12px;padding:20px;text-align:center">Presiona Generar análisis</div>
     </div>
     <div id="sun-controls" class="sun-controls">
-      <span>☀ Asoleamiento</span>
+      <label>☀ Asoleamiento</label>
       <input type="range" id="sun-hour" min="4" max="20" step="0.25" value="12"
         style="flex:1;accent-color:var(--amber);height:4px">
-      <span id="sun-hour-val" style="font-size:10px;color:var(--amber);width:34px;text-align:right">12:00</span>
+      <span id="sun-hour-val" style="font-size:10px;color:var(--amber);width:36px;text-align:right;font-weight:700">12:00</span>
       <select id="sun-doy">
         <option value="80">Equinoccio</option>
         <option value="355">21 Dic (verano)</option>
@@ -263,6 +372,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;paddi
     <div class="iso-hint">arrastrar · scroll zoom</div>
   </div>
 
+  <!-- Side panels: AQI + Sísmica -->
   <div class="side-panels">
     <div class="panel" id="aqi-panel">
       <div class="panel-title">Calidad del aire</div>
@@ -275,16 +385,21 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;paddi
   </div>
 </div>
 
+<!-- ══ BOTTOM GRID ════════════════════════════════════ -->
+<div class="section-hdr" style="margin-top:20px">
+  <h2>Diagramas y entorno</h2><div class="line"></div>
+</div>
+
 <div class="bottom-grid">
   <div class="panel">
     <div class="diag-title">Rosa de vientos</div>
     <canvas id="wind-canvas" style="display:block"></canvas>
-    <div id="wind-legend" class="mini-legend" style="margin-top:6px"></div>
+    <div id="wind-legend" class="mini-legend"></div>
   </div>
   <div class="panel">
     <div class="diag-title">Trayectoria solar</div>
     <canvas id="sun-canvas" style="display:block"></canvas>
-    <div class="mini-legend" style="margin-top:6px">
+    <div class="mini-legend">
       <span><span class="dot" style="background:#c84020"></span>21 Dic</span>
       <span><span class="dot" style="background:#2a9a50"></span>Equinoccio</span>
       <span><span class="dot" style="background:#4a90d9"></span>21 Jun</span>
@@ -295,13 +410,14 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;paddi
     <div style="color:var(--text-3);font-size:11px">Esperando datos...</div>
   </div>
   <div class="panel" id="amenities-panel">
-    <div class="panel-title">Entorno urbano <span class="pt-badge" id="amenities-radius"></span></div>
+    <div class="panel-title">Entorno urbano <span class="badge" id="amenities-radius"></span></div>
     <div style="color:var(--text-3);font-size:11px">Esperando datos...</div>
   </div>
 </div>
 
+<!-- ══ FOOTER ══════════════════════════════════════════ -->
 <div class="footer">
-  <span>Open-Meteo Archivo (ERA5 30a) · Open-Meteo Actual · Open-Meteo Pronóstico · Open-Meteo Calidad Aire · IGP/CENSIS (sismos) · Nominatim · Open-Elevation · Overpass/OSM · MapLibre/OpenFreeMap · NOAA Astronomía</span>
+  <span>Open-Meteo ERA5 (30a) · Open-Meteo Actual · Pronóstico · Calidad Aire · IGP/CENSIS Sismos · Nominatim · Open-Elevation · Overpass/OSM · MapLibre/OpenFreeMap</span>
   <span id="footer-coords"></span>
 </div>
 
@@ -544,14 +660,17 @@ function renderInfoBar(elevation,address,timezone,lat,lon){
     addrStr=parts.slice(0,3).join(', ')||'--';
   }
   const pills=[
-    ['📍 Dirección',addrStr,'max-width:280px'],
+    ['📍 Dirección',addrStr,'max-width:300px'],
     ['⛰ Elevación',elevation!=null?`${Math.round(elevation)} m.s.n.m.`:'--',''],
     ['🕐 Huso horario',timezone||'--',''],
     [`${moon.icon} Fase lunar`,`${moon.name} · ${moon.age}d · ${moon.illumination}% ilum.`,''],
     ['🌐 Coordenadas',`${fmt(lat,4)}° / ${fmt(lon,4)}°`,''],
   ];
   document.getElementById('info-bar').innerHTML=pills.map(([lbl,val,st])=>
-    `<div class="info-pill" style="${st}"><span class="ip-lbl">${lbl}</span><span class="ip-val" title="${val}">${val}</span></div>`
+    `<div class="info-pill" style="${st}">
+       <span class="ip-lbl">${lbl}</span>
+       <span class="ip-val" title="${val}">${val}</span>
+     </div>`
   ).join('');
 }
 
@@ -559,23 +678,23 @@ function renderInfoBar(elevation,address,timezone,lat,lon){
 function renderCurrentConditions(cur){
   const el=document.getElementById('current-row');
   if(!cur){
-    el.innerHTML='<div style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:14px;color:var(--text-3);font-size:12px">Condiciones actuales no disponibles</div>';
+    el.innerHTML='<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px;color:var(--text-3);font-size:12px">Condiciones actuales no disponibles</div>';
     return;
   }
-  el.style.gridTemplateColumns='repeat(auto-fill,minmax(120px,1fr))';
-  const gust=cur.wind_gusts_10m!=null?` ráf.${fmt(cur.wind_gusts_10m,0)}`:'';
+  el.style.gridTemplateColumns='repeat(auto-fill,minmax(130px,1fr))';
+  const gust=cur.wind_gusts_10m!=null?` · ráf. ${fmt(cur.wind_gusts_10m,0)}`:'';
   const items=[
     {icon:'🌡',val:cur.temperature_2m!=null?`${fmt(cur.temperature_2m,1)}°C`:'--',lbl:'Temperatura',sub:wmoDesc(cur.weather_code),col:RED},
-    {icon:'🤔',val:cur.apparent_temperature!=null?`${fmt(cur.apparent_temperature,1)}°C`:'--',lbl:'Sensación',sub:'térmica',col:ORANGE},
+    {icon:'🌡',val:cur.apparent_temperature!=null?`${fmt(cur.apparent_temperature,1)}°C`:'--',lbl:'Sensación térmica',sub:'',col:ORANGE},
     {icon:'💧',val:cur.relative_humidity_2m!=null?`${Math.round(cur.relative_humidity_2m)}%`:'--',lbl:'Humedad rel.',sub:'',col:TEAL},
     {icon:'💨',val:cur.wind_speed_10m!=null?`${fmt(cur.wind_speed_10m,1)} km/h`:'--',lbl:'Viento 10m',sub:(cur.wind_direction_10m!=null?windDirName(cur.wind_direction_10m):'')+gust,col:BLUE},
     {icon:'🔆',val:cur.uv_index!=null?fmt(cur.uv_index,1):'--',lbl:'Índice UV',sub:uvLabel(cur.uv_index),col:uvColor(cur.uv_index)},
-    {icon:'🔵',val:cur.surface_pressure!=null?`${Math.round(cur.surface_pressure)} hPa`:'--',lbl:'Presión',sub:'superficial',col:GRAY},
-    {icon:'👁',val:cur.visibility!=null?`${(cur.visibility/1000).toFixed(1)} km`:'--',lbl:'Visibilidad',sub:cur.visibility!=null&&cur.visibility<2000?'Muy baja':cur.visibility<5000?'Baja':'',col:cur.visibility!=null&&cur.visibility<2000?RED:LGRAY},
+    {icon:'🔵',val:cur.surface_pressure!=null?`${Math.round(cur.surface_pressure)} hPa`:'--',lbl:'Presión atm.',sub:'superficial',col:GRAY},
+    {icon:'👁',val:cur.visibility!=null?`${(cur.visibility/1000).toFixed(1)} km`:'--',lbl:'Visibilidad',sub:cur.visibility!=null&&cur.visibility<2000?'Muy baja':cur.visibility<5000?'Baja':'Normal',col:cur.visibility!=null&&cur.visibility<2000?RED:LGRAY},
     {icon:'☁️',val:cur.cloud_cover!=null?`${Math.round(cur.cloud_cover)}%`:'--',lbl:'Nubosidad',sub:cur.precipitation>0?`Prec. ${fmt(cur.precipitation,1)} mm`:'',col:GRAY},
   ];
   el.innerHTML=items.map(it=>`
-    <div class="curr-card">
+    <div class="curr-card" style="border-top:3px solid ${it.col}">
       <div class="curr-icon">${it.icon}</div>
       <div class="curr-val" style="color:${it.col}">${it.val}</div>
       <div class="curr-lbl">${it.lbl}</div>
@@ -600,7 +719,7 @@ function renderAQI(aq){
     ['CO',   aq.carbon_monoxide!=null?aq.carbon_monoxide/1000:null,'mg/m³',10],
   ];
   el.innerHTML=`<div class="panel-title">Calidad del aire</div>
-    <div class="aqi-score">
+    <div class="aqi-hero" style="border-color:${col}30">
       <div class="aqi-num" style="color:${col}">${aqi}</div>
       <div class="aqi-lbl" style="color:${col}">${lbl}</div>
       <div class="aqi-sub">Índice europeo (ICA)</div>
@@ -610,8 +729,8 @@ function renderAQI(aq){
     const c=val!=null&&val>lim*0.75?RED:val!=null&&val>lim*0.5?AMBER:GREEN;
     return`<div class="pollutant-row">
       <div class="pollutant-header">
-        <span style="font-weight:600">${name}</span>
-        <span style="color:${c};font-weight:700">${val!=null?fmt(val,2):'--'} ${unit}</span>
+        <span class="pollutant-name">${name}</span>
+        <span class="pollutant-val" style="color:${c}">${val!=null?fmt(val,2):'--'} ${unit}</span>
       </div>
       <div class="pollutant-bar">
         <div class="pollutant-fill" style="width:${pct}%;background:${c}"></div>
@@ -666,7 +785,7 @@ function renderSeismic(quakes){
       </div>
     </div>
 
-    <div class="seis-section-title">Distribución por magnitud</div>
+    <div class="seis-sec">Distribución por magnitud</div>
     ${bins.map(b=>`
       <div class="seis-bin">
         <span class="seis-bin-lbl">${b.lbl}</span>
@@ -676,23 +795,23 @@ function renderSeismic(quakes){
         <span class="seis-bin-n" style="color:${b.col}">${b.n}</span>
       </div>`).join('')}
 
-    <div class="seis-section-title">Más significativos</div>
+    <div class="seis-sec">Más significativos</div>
     ${topMag.map(q=>`
       <div class="seis-event">
         <span class="seis-mag-badge" style="color:${magCol(q.mag)};background:${magBg(q.mag)}">M${fmt(q.mag,1)}</span>
         <span class="seis-place" title="${q.place}">${q.place}</span>
-        <span class="seis-meta">${q.depth!=null?q.depth+'km':''}<br>${q.dist}km</span>
+        <span class="seis-meta">${q.depth!=null?q.depth+' km':''}<br>${q.dist} km</span>
       </div>`).join('')}
 
-    <div class="seis-section-title">Más recientes</div>
+    <div class="seis-sec">Más recientes</div>
     ${recent.map(q=>`
       <div class="seis-event">
         <span class="seis-mag-badge" style="color:${magCol(q.mag)};background:${magBg(q.mag)}">M${fmt(q.mag,1)}</span>
         <span class="seis-place" title="${q.place}">${q.place}</span>
-        <span class="seis-meta">${dayStr(q.time)}<br>${q.dist}km</span>
+        <span class="seis-meta">${dayStr(q.time)}<br>${q.dist} km</span>
       </div>`).join('')}
 
-    <div style="font-size:9px;color:var(--text-3);margin-top:6px">${total} eventos en catálogo actual</div>`;
+    <div style="font-size:9px;color:var(--text-3);margin-top:8px">${total} eventos · catálogo actual</div>`;
 }
 
 // ─── Render: Pronóstico 7 días ────────────────────────────────────────────────
@@ -720,8 +839,7 @@ function renderForecast(forecast){
     return`<div class="fc-day">
       <div class="fc-dow">${dnames[date.getDay()]}</div>
       <div class="fc-date">${date.getDate()}</div>
-      <div style="font-size:16px;line-height:1.3">${wmoIcon(code)}</div>
-      <div class="fc-cond">${wmoShort(code)}</div>
+      <div class="fc-icon">${wmoIcon(code)}</div>
       <div class="fc-bar">
         <div style="position:absolute;bottom:0;left:0;width:100%;height:${barHi}px;background:${RED}55;border-radius:2px 2px 0 0"></div>
         <div style="position:absolute;bottom:0;left:0;width:100%;height:${barLo}px;background:${BLUE}55;border-radius:2px 2px 0 0"></div>
@@ -760,22 +878,23 @@ function renderAmenities(elements){
     {title:'Recreación',cats:['park','garden','sports_centre','playground','stadium'],col:GREEN,bg:'#e6f5ec'},
   ];
 
-  let html=`<div class="panel-title">Entorno urbano <span class="pt-badge" id="amenities-radius">r = 600m</span></div>`;
+  let html=`<div class="panel-title">Entorno urbano <span class="badge" id="amenities-radius">r = 600m</span></div>`;
   if(!Object.keys(counts).length){
     html+='<div style="color:var(--text-3);font-size:11px">Sin datos OSM en este radio</div>';
   } else {
     priorityGroups.forEach(g=>{
       const items=g.cats.filter(c=>counts[c]);
       if(!items.length)return;
-      html+=`<div class="amenity-group-title" style="color:${g.col}">${g.title}</div>`;
+      html+=`<div class="amenity-group"><div class="amenity-group-label" style="color:${g.col}">${g.title}</div>`;
       items.forEach(c=>{
         html+=`<div class="amenity-row">
           <span class="k">${catMap[c]}</span>
           <span class="amenity-badge" style="background:${g.col}">${counts[c]}</span>
         </div>`;
       });
+      html+='</div>';
     });
-    html+=`<div style="font-size:9px;color:var(--text-3);margin-top:8px">Total: ${totalEl} elementos OSM</div>`;
+    html+=`<div style="font-size:9px;color:var(--text-3);margin-top:4px">Total: ${totalEl} elementos OSM</div>`;
   }
   el.innerHTML=html;
 }
@@ -1087,13 +1206,13 @@ function renderAll(lat,mdata){
 
   // CLIMA panel
   const climaStats=[
-    {val:tMaxAvg!=null?`${Math.round(tMaxAvg)} °C`:'--',lbl:'T° máxima prom.',col:RED},
-    {val:tMinAvg!=null?`${Math.round(tMinAvg)} °C`:'--',lbl:'T° mínima prom.',col:BLUE},
+    {val:tMaxAvg!=null?`${Math.round(tMaxAvg)} °C`:'--',lbl:'T° máx. prom.',col:RED},
+    {val:tMinAvg!=null?`${Math.round(tMinAvg)} °C`:'--',lbl:'T° mín. prom.',col:BLUE},
     {val:tMed!=null?`${fmt(tMed,1)} °C`:'--',lbl:'T° media anual',col:LGRAY},
     {val:amplitude!=null?`${fmt(amplitude,1)} °C`:'--',lbl:'Amplitud térmica',col:ORANGE},
-    {val:rhAvg!=null?`${Math.round(rhAvg)} %`:'--',lbl:'Humedad rel. prom.',col:TEAL},
-    {val:sunAvg!=null?`${fmt(sunAvg,1)} h/día`:'--',lbl:'Horas de sol prom.',col:AMBER},
-    {val:wsAvg!=null?`${fmt(wsAvg,1)} km/h`:'--',lbl:'Vel. viento prom.',col:GRAY},
+    {val:rhAvg!=null?`${Math.round(rhAvg)} %`:'--',lbl:'Humedad prom.',col:TEAL},
+    {val:sunAvg!=null?`${fmt(sunAvg,1)} h/día`:'--',lbl:'Sol prom.',col:AMBER},
+    {val:wsAvg!=null?`${fmt(wsAvg,1)} km/h`:'--',lbl:'Viento prom.',col:GRAY},
     {val:precTotal!=null?`${Math.round(precTotal)} mm/año`:'--',lbl:'Precipitación anual',col:LGRAY},
     {val:koppen.code,lbl:'Koppen',col:TEAL},
   ];
@@ -1190,7 +1309,7 @@ async function generate(){
   document.getElementById('subtitle').textContent=`${name}  ·  ${fmt(lat,4)}° / ${fmt(lon,4)}°`;
   document.getElementById('footer-coords').textContent=`Lat: ${fmt(lat,4)}  Lon: ${fmt(lon,4)}`;
   document.getElementById('info-bar').innerHTML='<div style="color:var(--text-3);font-size:11px;padding:4px 0">Consultando APIs...</div>';
-  document.getElementById('current-row').innerHTML='<div style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:14px;color:var(--text-3);font-size:12px">Cargando condiciones actuales...</div>';
+  document.getElementById('current-row').innerHTML='<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px;color:var(--text-3);font-size:12px">Cargando condiciones actuales...</div>';
 
   drawIso(lat,lon,name);
   drawSunPath(lat);

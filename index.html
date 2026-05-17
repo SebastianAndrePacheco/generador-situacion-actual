@@ -391,7 +391,6 @@ async function drawIso(lat,lon,name){
   });
 
   // ── CALLES ───────────────────────────────────────────────────────────────
-  const streetLabels=[];
   const hwMeta={
     motorway:  {w:9, col:0x9e9a8c},
     trunk:     {w:9, col:0x9e9a8c},
@@ -427,15 +426,38 @@ async function drawIso(lat,lon,name){
         mesh.receiveShadow=true;
         scene.add(mesh);
       }
-      // Etiqueta de nombre en el punto medio de la vía
-      if(s.name){
+      // Nombre pintado en el suelo como textura 3D alineada con la calle
+      if(s.name && s.pts.length>=2){
         const mid=Math.floor(s.pts.length/2);
-        const mp=s.pts[mid];
-        const lbl=document.createElement('div');
-        lbl.style.cssText='position:absolute;font-size:7px;color:#333320;pointer-events:none;z-index:13;white-space:nowrap;background:rgba(255,255,255,0.88);padding:1px 4px;border-radius:2px;transform:translate(-50%,-50%);border:0.5px solid #ccc8b0';
-        lbl.textContent=s.name;
-        lbl.dataset.wx=mp.x;lbl.dataset.wy=32;lbl.dataset.wz=mp.z;
-        cont.appendChild(lbl);streetLabels.push(lbl);
+        const pa=s.pts[Math.max(0,mid-1)], pb=s.pts[mid];
+        const segDx=pb.x-pa.x, segDz=pb.z-pa.z;
+        const segLen=Math.sqrt(segDx*segDx+segDz*segDz);
+        if(segLen>0.5){
+          const roadAngle=Math.atan2(segDx,segDz);
+          const mx2=(pa.x+pb.x)/2, mz2=(pa.z+pb.z)/2;
+          // Canvas con el texto
+          const tc=document.createElement('canvas');
+          tc.height=32;
+          const tctx=tc.getContext('2d');
+          tctx.font='bold 15px Arial,sans-serif';
+          const tw=tctx.measureText(s.name).width;
+          tc.width=Math.ceil(tw)+18;
+          tctx.font='bold 15px Arial,sans-serif';
+          tctx.fillStyle='rgba(44,40,28,0.92)';
+          tctx.fillText(s.name,9,22);
+          const tex=new THREE.CanvasTexture(tc);
+          tex.needsUpdate=true;
+          const aspect=tc.width/32;
+          const grp=new THREE.Group();
+          grp.position.set(mx2,0.22,mz2);
+          grp.rotation.y=roadAngle;
+          const pln=new THREE.Mesh(
+            new THREE.PlaneGeometry(aspect*5,5),
+            new THREE.MeshBasicMaterial({map:tex,transparent:true,depthWrite:false,side:THREE.DoubleSide})
+          );
+          pln.rotation.x=-Math.PI/2;
+          grp.add(pln); scene.add(grp);
+        }
       }
     }catch(e){}
   });
@@ -526,7 +548,7 @@ async function drawIso(lat,lon,name){
   }
 
   // ── PROYECCIÓN DOM LABELS ────────────────────────────────────────────────
-  const allLabels=[...heightLabels,...streetLabels,...(_3d._extraLabels||[])];
+  const allLabels=[...heightLabels,...(_3d._extraLabels||[])];
   function updateLabels(){
     allLabels.forEach(lbl=>{
       const v=new THREE.Vector3(+lbl.dataset.wx,+lbl.dataset.wy,+lbl.dataset.wz).project(camera);

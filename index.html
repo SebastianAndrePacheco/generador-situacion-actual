@@ -67,6 +67,17 @@ h1{font-size:18px;font-weight:700;color:#1a1820;letter-spacing:.5px;margin-botto
 .bar-val{font-size:9px;color:#999;width:36px}
 /* Footer */
 .footer{margin-top:12px;padding-top:8px;border-top:0.5px solid #ddd;font-size:10px;color:#aaa;display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px}
+/* Print / PDF */
+.btn-pdf{background:#1a6db0;margin-left:auto}
+.btn-pdf:hover{background:#2a7dc0}
+@page{size:A3 landscape;margin:8mm}
+@media print{
+  .top-bar,.no-print{display:none!important}
+  body{padding:4px;background:#fff}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .panel{break-inside:avoid}
+  .bottom-grid{grid-template-columns:repeat(4,1fr)}
+}
 </style>
 </head>
 <body>
@@ -76,6 +87,7 @@ h1{font-size:18px;font-weight:700;color:#1a1820;letter-spacing:.5px;margin-botto
   <input id="inp-lon" type="number" step="0.0001" placeholder="Longitud" value="-77.0282">
   <input id="inp-name" type="text" placeholder="Nombre del lugar" value="C.H. La Muralla">
   <button onclick="generate()">Generar análisis</button>
+  <button class="btn-pdf no-print" onclick="window.print()">Exportar PDF</button>
   <span class="status" id="status">Listo</span>
 </div>
 
@@ -161,7 +173,7 @@ h1{font-size:18px;font-weight:700;color:#1a1820;letter-spacing:.5px;margin-botto
 </div>
 
 <div class="footer">
-  <span>Open-Meteo Archivo · Open-Meteo Actual · Open-Meteo Pronóstico · Open-Meteo Calidad Aire · USGS Earthquakes · Nominatim · Open-Elevation · Overpass/OSM · MapLibre/OpenFreeMap · NOAA Astronomía</span>
+  <span>Open-Meteo Archivo (ERA5 30a) · Open-Meteo Actual · Open-Meteo Pronóstico · Open-Meteo Calidad Aire · IGP/CENSIS (sismos) · Nominatim · Open-Elevation · Overpass/OSM · MapLibre/OpenFreeMap · NOAA Astronomía</span>
   <span id="footer-coords"></span>
 </div>
 
@@ -327,17 +339,25 @@ async function fetchAddress(lat,lon){
   }catch(_){return null;}
 }
 
-async function fetchEarthquakes(lat,lon){
-  const ago=new Date();ago.setDate(ago.getDate()-90);
-  const url=`https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson`+
-    `&latitude=${lat}&longitude=${lon}&maxradiuskm=300&minmagnitude=3`+
-    `&orderby=magnitude&limit=7&starttime=${ago.toISOString().slice(0,10)}`;
+async function fetchIGP(lat,lon){
   try{
-    const r=await fetch(url);
-    return(await r.json()).features?.map(f=>({
-      mag:f.properties.mag,place:f.properties.place,
-      time:new Date(f.properties.time),depth:f.geometry?.coordinates?.[2]??null
-    }))||[];
+    const r=await fetch('https://censis.igp.gob.pe/api/ultimo-sismo/sismos');
+    const data=await r.json();
+    if(!Array.isArray(data))return[];
+    const toR=d=>d*Math.PI/180;
+    return data
+      .filter(s=>!s.simulacro&&s.latitud&&s.longitud)
+      .map(s=>{
+        const slat=parseFloat(s.latitud),slon=parseFloat(s.longitud);
+        const dlat=toR(slat-lat),dlon=toR(slon-lon);
+        const a=Math.sin(dlat/2)**2+Math.cos(toR(lat))*Math.cos(toR(slat))*Math.sin(dlon/2)**2;
+        const dist=6371*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+        return{mag:parseFloat(s.magnitud),place:s.referencia,time:new Date(s.fecha_hora),
+               depth:s.profundidad,intensidad:s.intensidades,dist:Math.round(dist),codigo:s.codigo};
+      })
+      .filter(s=>s.dist<=300)
+      .sort((a,b)=>b.mag-a.mag)
+      .slice(0,7);
   }catch(_){return[];}
 }
 
@@ -472,27 +492,30 @@ function renderSeismic(quakes){
   const el=document.getElementById('seismic-panel');
   const magCol=m=>m>=6?'#8b0000':m>=5?RED:m>=4?ORANGE:ACCENT;
   if(!quakes.length){
-    el.innerHTML=`<div class="panel-title">ACTIVIDAD SÍSMICA</div>
-      <div style="color:${GREEN};font-size:11px;padding:6px 0">Sin actividad M≥3 en 300 km / 90 días</div>`;
+    el.innerHTML=`<div class="panel-title">ACTIVIDAD SÍSMICA <span style="font-weight:400;color:#bbb;font-size:9px">IGP/CENSIS · 300km</span></div>
+      <div style="color:${GREEN};font-size:11px;padding:6px 0">Sin sismos M≥3 en 300 km registrados por el IGP</div>`;
     return;
   }
-  el.innerHTML=`<div class="panel-title">ACTIVIDAD SÍSMICA <span style="font-weight:400;color:#bbb;font-size:9px">M≥3 · 300km · 90d</span></div>`+
+  el.innerHTML=`<div class="panel-title">ACTIVIDAD SÍSMICA <span style="font-weight:400;color:#bbb;font-size:9px">IGP/CENSIS · r≤300km</span></div>`+
   quakes.slice(0,5).map(q=>{
-    const placeShort=(q.place||'').replace(/^[\d.]+\s*km\s+\w+\s+of\s+/i,'').slice(0,30);
-    const dayStr=q.time?.toLocaleDateString('es-PE',{day:'numeric',month:'short'})||'';
+    const dayStr=q.time?.toLocaleDateString('es-PE',{day:'numeric',month:'short',year:'2-digit'})||'';
+    const intStr=q.intensidad?`Int. ${q.intensidad.slice(0,15)}`:'';
     return`<div class="clima-row" style="margin-bottom:4px">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:4px">
-        <div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:4px">
+        <div style="min-width:0">
           <div class="val" style="color:${magCol(q.mag)}">M ${fmt(q.mag,1)}</div>
-          <div class="lbl">${placeShort}</div>
+          <div class="lbl" style="white-space:normal;line-height:1.3">${q.place||'--'}</div>
+          ${intStr?`<div style="font-size:8px;color:${ORANGE};margin-top:1px">${intStr}</div>`:''}
         </div>
         <div style="text-align:right;flex-shrink:0">
-          <div style="font-size:10px;color:#888">${q.depth!=null?`${Math.round(q.depth)}km prof.`:''}</div>
-          <div style="font-size:9px;color:#bbb">${dayStr}</div>
+          <div style="font-size:10px;color:#888">${q.depth!=null?`${q.depth}km prof.`:''}</div>
+          <div style="font-size:9px;color:#aaa">${q.dist}km</div>
+          <div style="font-size:8px;color:#bbb">${dayStr}</div>
         </div>
       </div>
     </div>`;
-  }).join('');
+  }).join('')+
+  `<div style="font-size:8px;color:#ccc;margin-top:4px">Fuente: IGP/CENSIS · ${quakes.length} sismos encontrados</div>`;
 }
 
 // ─── Render: Pronóstico 7 días ────────────────────────────────────────────────
@@ -1005,7 +1028,7 @@ async function generate(){
     fetchAirQuality(lat,lon),
     fetchElevation(lat,lon),
     fetchAddress(lat,lon),
-    fetchEarthquakes(lat,lon),
+    fetchIGP(lat,lon),
     fetchForecast(lat,lon),
     fetchAmenities(lat,lon),
   ].map(p=>p.catch(()=>null)));

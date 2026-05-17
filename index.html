@@ -67,6 +67,41 @@ h1{font-size:18px;font-weight:700;color:#1a1820;letter-spacing:.5px;margin-botto
 .bar-val{font-size:9px;color:#999;width:36px}
 /* Footer */
 .footer{margin-top:12px;padding-top:8px;border-top:0.5px solid #ddd;font-size:10px;color:#aaa;display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px}
+/* Seismic panel */
+.seis-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:8px}
+.seis-stat{background:#f7f5f1;border-radius:5px;padding:5px 4px;text-align:center}
+.seis-stat .sv{font-size:20px;font-weight:700;line-height:1}
+.seis-stat .sl{font-size:8px;color:#aaa;letter-spacing:.4px;margin-top:2px}
+.seis-bin{display:flex;align-items:center;gap:5px;margin-bottom:3px}
+.seis-bin-lbl{font-size:9px;color:#888;width:30px;flex-shrink:0}
+.seis-bin-track{flex:1;background:#ede9e2;border-radius:2px;height:8px}
+.seis-bin-fill{height:8px;border-radius:2px}
+.seis-bin-n{font-size:9px;font-weight:700;width:24px;text-align:right;flex-shrink:0}
+.seis-event{display:flex;align-items:center;gap:5px;background:#f7f5f1;border-radius:4px;padding:4px 6px;margin-bottom:3px}
+.seis-mag{font-size:13px;font-weight:700;flex-shrink:0;width:32px}
+.seis-place{font-size:9px;color:#555;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.seis-meta{font-size:8px;color:#bbb;flex-shrink:0;text-align:right;line-height:1.4}
+/* Responsive */
+@media(max-width:1100px){
+  .main-grid{grid-template-columns:180px 1fr!important}
+  .side-panels{grid-column:1/-1;grid-row:auto;grid-template-rows:none;grid-template-columns:1fr 1fr}
+  .cards-row{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:700px){
+  .main-grid{grid-template-columns:1fr!important}
+  .clima-panel,.iso-panel,.side-panels{grid-column:1;grid-row:auto}
+  .cards-row{grid-column:1;grid-template-columns:1fr 1fr}
+  .side-panels{grid-template-columns:1fr}
+  .bottom-grid{grid-template-columns:1fr 1fr}
+  .curr-row{grid-template-columns:repeat(4,1fr)!important}
+  .info-bar{flex-direction:column}
+  .info-pill{min-width:0;flex:none}
+}
+@media(max-width:420px){
+  .cards-row{grid-template-columns:1fr}
+  .bottom-grid{grid-template-columns:1fr}
+  .curr-row{grid-template-columns:repeat(2,1fr)!important}
+}
 /* Print / PDF */
 .btn-pdf{background:#1a6db0;margin-left:auto}
 .btn-pdf:hover{background:#2a7dc0}
@@ -76,6 +111,9 @@ h1{font-size:18px;font-weight:700;color:#1a1820;letter-spacing:.5px;margin-botto
   body{padding:4px;background:#fff}
   *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .panel{break-inside:avoid}
+  .main-grid{grid-template-columns:200px 1fr 230px!important}
+  .side-panels{grid-column:3/4;grid-row:2/3;grid-template-columns:none;grid-template-rows:1fr 1fr}
+  .cards-row{grid-column:2/-1;grid-template-columns:repeat(4,1fr)}
   .bottom-grid{grid-template-columns:repeat(4,1fr)}
 }
 </style>
@@ -351,13 +389,11 @@ async function fetchIGP(lat,lon){
         const slat=parseFloat(s.latitud),slon=parseFloat(s.longitud);
         const dlat=toR(slat-lat),dlon=toR(slon-lon);
         const a=Math.sin(dlat/2)**2+Math.cos(toR(lat))*Math.cos(toR(slat))*Math.sin(dlon/2)**2;
-        const dist=6371*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+        const dist=Math.round(6371*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a)));
         return{mag:parseFloat(s.magnitud),place:s.referencia,time:new Date(s.fecha_hora),
-               depth:s.profundidad,intensidad:s.intensidades,dist:Math.round(dist),codigo:s.codigo};
+               depth:s.profundidad,intensidad:s.intensidades,dist,codigo:s.codigo};
       })
-      .filter(s=>s.dist<=300)
-      .sort((a,b)=>b.mag-a.mag)
-      .slice(0,7);
+      .filter(s=>s.dist<=300); // sin filtro de magnitud mínima, sin límite de cantidad
   }catch(_){return[];}
 }
 
@@ -490,32 +526,80 @@ function renderAQI(aq){
 // ─── Render: Actividad sísmica ───────────────────────────────────────────────
 function renderSeismic(quakes){
   const el=document.getElementById('seismic-panel');
-  const magCol=m=>m>=6?'#8b0000':m>=5?RED:m>=4?ORANGE:ACCENT;
+  const magCol=m=>m>=6?'#8b0000':m>=5?RED:m>=4?ORANGE:m>=3?ACCENT:GRAY;
+
   if(!quakes.length){
-    el.innerHTML=`<div class="panel-title">ACTIVIDAD SÍSMICA <span style="font-weight:400;color:#bbb;font-size:9px">IGP/CENSIS · 300km</span></div>
-      <div style="color:${GREEN};font-size:11px;padding:6px 0">Sin sismos M≥3 en 300 km registrados por el IGP</div>`;
+    el.innerHTML=`<div class="panel-title">ACTIVIDAD SÍSMICA <span style="font-weight:400;color:#bbb;font-size:9px">IGP/CENSIS · r≤300km</span></div>
+      <div style="color:${GREEN};font-size:11px;padding:8px 0">Sin sismos registrados en 300 km</div>`;
     return;
   }
-  el.innerHTML=`<div class="panel-title">ACTIVIDAD SÍSMICA <span style="font-weight:400;color:#bbb;font-size:9px">IGP/CENSIS · r≤300km</span></div>`+
-  quakes.slice(0,5).map(q=>{
-    const dayStr=q.time?.toLocaleDateString('es-PE',{day:'numeric',month:'short',year:'2-digit'})||'';
-    const intStr=q.intensidad?`Int. ${q.intensidad.slice(0,15)}`:'';
-    return`<div class="clima-row" style="margin-bottom:4px">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:4px">
-        <div style="min-width:0">
-          <div class="val" style="color:${magCol(q.mag)}">M ${fmt(q.mag,1)}</div>
-          <div class="lbl" style="white-space:normal;line-height:1.3">${q.place||'--'}</div>
-          ${intStr?`<div style="font-size:8px;color:${ORANGE};margin-top:1px">${intStr}</div>`:''}
-        </div>
-        <div style="text-align:right;flex-shrink:0">
-          <div style="font-size:10px;color:#888">${q.depth!=null?`${q.depth}km prof.`:''}</div>
-          <div style="font-size:9px;color:#aaa">${q.dist}km</div>
-          <div style="font-size:8px;color:#bbb">${dayStr}</div>
-        </div>
+
+  const total=quakes.length;
+  const mags=quakes.map(q=>q.mag);
+  const maxMag=Math.max(...mags);
+  const avgDepth=avg(quakes.map(q=>q.depth).filter(d=>d!=null));
+
+  // Bins por magnitud
+  const bins=[{lbl:'M2-3',col:ACCENT2,n:0},{lbl:'M3-4',col:TEAL,n:0},
+              {lbl:'M4-5',col:ACCENT,n:0},{lbl:'M5-6',col:ORANGE,n:0},{lbl:'M6+',col:RED,n:0}];
+  mags.forEach(m=>{
+    if(m<3)bins[0].n++;else if(m<4)bins[1].n++;else if(m<5)bins[2].n++;
+    else if(m<6)bins[3].n++;else bins[4].n++;
+  });
+  const maxBin=Math.max(...bins.map(b=>b.n))||1;
+
+  // Top 6 por magnitud
+  const topMag=[...quakes].sort((a,b)=>b.mag-a.mag).slice(0,6);
+  // 3 más recientes
+  const recent=[...quakes].sort((a,b)=>b.time-a.time).slice(0,3);
+
+  const dayStr=t=>t?.toLocaleDateString('es-PE',{day:'numeric',month:'short'})||'';
+
+  el.innerHTML=`
+    <div class="panel-title">ACTIVIDAD SÍSMICA <span style="font-weight:400;color:#bbb;font-size:9px">IGP/CENSIS · r≤300km</span></div>
+
+    <div class="seis-stats">
+      <div class="seis-stat">
+        <div class="sv" style="color:${RED}">${total}</div>
+        <div class="sl">SISMOS</div>
       </div>
-    </div>`;
-  }).join('')+
-  `<div style="font-size:8px;color:#ccc;margin-top:4px">Fuente: IGP/CENSIS · ${quakes.length} sismos encontrados</div>`;
+      <div class="seis-stat">
+        <div class="sv" style="color:${magCol(maxMag)}">M${fmt(maxMag,1)}</div>
+        <div class="sl">MÁXIMO</div>
+      </div>
+      <div class="seis-stat">
+        <div class="sv" style="color:${LGRAY}">${avgDepth!=null?Math.round(avgDepth):'--'}</div>
+        <div class="sl">PROF. km</div>
+      </div>
+    </div>
+
+    <div style="font-size:8px;font-weight:700;color:#bbb;letter-spacing:.5px;margin-bottom:5px">DISTRIBUCIÓN POR MAGNITUD</div>
+    ${bins.map(b=>`
+      <div class="seis-bin">
+        <span class="seis-bin-lbl">${b.lbl}</span>
+        <div class="seis-bin-track">
+          <div class="seis-bin-fill" style="width:${(b.n/maxBin*100).toFixed(0)}%;background:${b.col}"></div>
+        </div>
+        <span class="seis-bin-n" style="color:${b.col}">${b.n}</span>
+      </div>`).join('')}
+
+    <div style="font-size:8px;font-weight:700;color:#bbb;letter-spacing:.5px;margin:8px 0 5px">MÁS SIGNIFICATIVOS</div>
+    ${topMag.map(q=>`
+      <div class="seis-event">
+        <span class="seis-mag" style="color:${magCol(q.mag)}">M${fmt(q.mag,1)}</span>
+        <span class="seis-place" title="${q.place}">${q.place}</span>
+        <span class="seis-meta">${q.depth!=null?q.depth+'km':''}<br>${q.dist}km</span>
+      </div>`).join('')}
+
+    <div style="font-size:8px;font-weight:700;color:#bbb;letter-spacing:.5px;margin:8px 0 5px">MÁS RECIENTES</div>
+    ${recent.map(q=>`
+      <div class="seis-event">
+        <span class="seis-mag" style="color:${magCol(q.mag)}">M${fmt(q.mag,1)}</span>
+        <span class="seis-place" title="${q.place}">${q.place}</span>
+        <span class="seis-meta">${dayStr(q.time)}<br>${q.dist}km</span>
+      </div>`).join('')}
+
+    <div style="font-size:8px;color:#ccc;margin-top:6px">IGP/CENSIS · ${total} eventos en catálogo actual</div>`;
 }
 
 // ─── Render: Pronóstico 7 días ────────────────────────────────────────────────

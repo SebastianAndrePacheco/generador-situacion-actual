@@ -208,6 +208,7 @@ function processDaily(data){
 
 const _3d={animId:null,lat:null,map:null};
 let _sunAnimId=null;
+let _shadowBuildings=null;
 
 function updateSun(){
   const hour=parseFloat(document.getElementById('sun-hour').value);
@@ -239,6 +240,45 @@ function updateSun(){
       ]);
     }catch(_){}
   }
+  updateShadowLayer();
+}
+
+async function fetchShadowBuildings(lat,lon){
+  const q=`[out:json][timeout:15];(way["building"](around:160,${lat},${lon}););out geom tags;`;
+  try{
+    const r=await fetch('https://overpass-api.de/api/interpreter?data='+encodeURIComponent(q));
+    const d=await r.json();
+    return(d.elements||[]).filter(e=>e.type==='way'&&e.geometry?.length>=3).map(e=>{
+      const ring=e.geometry.map(p=>[p.lon,p.lat]);
+      if(ring[0][0]!==ring[ring.length-1][0]||ring[0][1]!==ring[ring.length-1][1])ring.push(ring[0]);
+      const h=parseFloat(e.tags?.height)||parseFloat(e.tags?.['building:levels']||0)*3.2||5;
+      return{ring,h};
+    });
+  }catch(_){return[];}
+}
+
+function updateShadowLayer(){
+  if(!_3d.map||!_shadowBuildings?.length)return;
+  const hour=parseFloat(document.getElementById('sun-hour').value);
+  const doy=parseInt(document.getElementById('sun-doy').value);
+  const{alt,az}=sunAltAz(_3d.lat,doy,hour);
+  const src=_3d.map.getSource('shadows');
+  if(!src)return;
+  if(alt<=2){src.setData({type:'FeatureCollection',features:[]});return;}
+  const shadowDir=(az+180)%360;
+  const mPerLon=111320*Math.cos(toRad(_3d.lat)),mPerLat=110540;
+  const features=[];
+  for(const{ring,h}of _shadowBuildings){
+    const sLen=Math.min(h/Math.tan(toRad(alt)),150);
+    const dx=Math.sin(toRad(shadowDir))*sLen/mPerLon;
+    const dy=Math.cos(toRad(shadowDir))*sLen/mPerLat;
+    const n=ring.length-1;
+    const proj=ring.slice(0,n).map(([lo,la])=>[lo+dx,la+dy]);
+    const poly=[...ring.slice(0,n),...proj.slice().reverse()];
+    poly.push(poly[0]);
+    features.push({type:'Feature',geometry:{type:'Polygon',coordinates:[poly]}});
+  }
+  src.setData({type:'FeatureCollection',features});
 }
 
 function drawIso(lat,lon,name){
@@ -276,6 +316,15 @@ function drawIso(lat,lon,name){
   _3d.map=map; _3d.lat=lat;
 
   map.on('load',()=>{
+    // Capa de sombras proyectadas en suelo (se inserta ANTES de los edificios)
+    const firstExtLayer=map.getStyle().layers.find(l=>l.type==='fill-extrusion');
+    map.addSource('shadows',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
+    map.addLayer({id:'building-shadows',type:'fill',source:'shadows',
+      paint:{'fill-color':'#000000','fill-opacity':0.28,'fill-antialias':false}
+    },firstExtLayer?.id);
+    _shadowBuildings=null;
+    fetchShadowBuildings(lat,lon).then(b=>{_shadowBuildings=b;updateShadowLayer();});
+
     // Colorear edificios 3D si el estilo los incluye
     map.getStyle().layers.forEach(layer=>{
       if(layer.type==='fill-extrusion'&&(layer['source-layer']==='building'||layer.id.includes('building'))){

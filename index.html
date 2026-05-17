@@ -95,17 +95,17 @@ h1{font-size:18px;font-weight:700;color:#1a1820;letter-spacing:.5px;margin-botto
   </div>
 
   <div class="diagrams">
-    <div class="panel" style="min-height:140px">
+    <div class="panel">
       <div class="diag-title">ROSA DE VIENTOS</div>
-      <canvas id="wind-canvas" width="320" height="118" style="width:100%"></canvas>
-      <div id="wind-legend" class="mini-legend"></div>
+      <canvas id="wind-canvas" style="display:block"></canvas>
+      <div id="wind-legend" class="mini-legend" style="margin-top:6px"></div>
     </div>
-    <div class="panel" style="min-height:140px">
+    <div class="panel">
       <div class="diag-title">TRAYECTORIA SOLAR</div>
-      <canvas id="sun-canvas" width="320" height="118" style="width:100%"></canvas>
-      <div class="mini-legend">
-        <span><span class="dot" style="background:#e84b4b"></span>21 Dic</span>
-        <span><span class="dot" style="background:#7fc97f"></span>Equinoccio</span>
+      <canvas id="sun-canvas" style="display:block"></canvas>
+      <div class="mini-legend" style="margin-top:6px">
+        <span><span class="dot" style="background:#c84020"></span>21 Dic</span>
+        <span><span class="dot" style="background:#2a9a50"></span>Equinoccio</span>
         <span><span class="dot" style="background:#4a90d9"></span>21 Jun</span>
       </div>
     </div>
@@ -207,6 +207,7 @@ function processDaily(data){
 }
 
 const _3d={renderer:null,animId:null,sunLight:null,sunSphere:null,lat:null,scene:null,sunArcLine:null,windArrow:null};
+let _sunAnimId=null;
 
 function sunPos3D(lat,doy,hour,dist=380){
   const{alt,az}=sunAltAz(lat,doy,hour);
@@ -271,7 +272,8 @@ function ll2xz(lat,lon,clat,clon){
 }
 
 async function fetchOSMData(lat,lon){
-  const q=`[out:json][timeout:25];(way["building"](around:300,${lat},${lon});way["leisure"="park"](around:300,${lat},${lon});way["landuse"~"^(grass|park|garden|green)$"](around:300,${lat},${lon});way["natural"~"^(wood|grassland|scrub)$"](around:300,${lat},${lon}););out body;>;out skel qt;`;
+  const R=150;
+  const q=`[out:json][timeout:25];(way["building"](around:${R},${lat},${lon});way["leisure"="park"](around:${R},${lat},${lon});way["landuse"~"^(grass|park|garden|green)$"](around:${R},${lat},${lon});way["natural"~"^(wood|grassland|scrub)$"](around:${R},${lat},${lon});way["highway"](around:${R},${lat},${lon}););out body;>;out skel qt;`;
   try{
     const r=await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(q)}`);
     if(!r.ok)throw new Error(r.status);
@@ -280,24 +282,32 @@ async function fetchOSMData(lat,lon){
 }
 
 function parseOSM(osm,clat,clon){
-  if(!osm)return{buildings:[],vegetation:[]};
+  if(!osm)return{buildings:[],vegetation:[],streets:[]};
   const nodes={};
   osm.elements.forEach(e=>{if(e.type==='node')nodes[e.id]={lat:e.lat,lon:e.lon};});
-  const buildings=[],vegetation=[];
+  const buildings=[],vegetation=[],streets=[];
   osm.elements.forEach(e=>{
     if(e.type!=='way'||!e.nodes)return;
     const pts=e.nodes.map(id=>nodes[id]?ll2xz(nodes[id].lat,nodes[id].lon,clat,clon):null).filter(Boolean);
-    if(pts.length<3)return;
+    if(pts.length<2)return;
     if(e.tags&&e.tags.building){
+      if(pts.length<3)return;
       const lv=parseInt(e.tags['building:levels'])||null;
       const ht=parseFloat(e.tags['height'])||null;
       const height=ht||(lv?lv*3.2:5+Math.random()*15);
       buildings.push({pts,height,tags:e.tags});
     }else if(e.tags&&(e.tags.leisure||e.tags.landuse||e.tags.natural)){
+      if(pts.length<3)return;
       vegetation.push({pts,tags:e.tags});
+    }else if(e.tags&&e.tags.highway){
+      const hw=e.tags.highway;
+      // skip paths/footways without names
+      const minor=['footway','path','cycleway','steps','service'];
+      if(minor.includes(hw)&&!e.tags.name)return;
+      streets.push({pts,name:e.tags.name||null,type:hw});
     }
   });
-  return{buildings,vegetation};
+  return{buildings,vegetation,streets};
 }
 
 async function drawIso(lat,lon,name){
@@ -310,7 +320,7 @@ async function drawIso(lat,lon,name){
 
   const W=cont.clientWidth||420,H=cont.clientHeight||300;
   const osm=await fetchOSMData(lat,lon);
-  const{buildings,vegetation}=parseOSM(osm,lat,lon);
+  const{buildings,vegetation,streets}=parseOSM(osm,lat,lon);
   cont.innerHTML='';
 
   const scene=new THREE.Scene();
@@ -347,27 +357,26 @@ async function drawIso(lat,lon,name){
   sunLight.castShadow=true;
   sunLight.shadow.mapSize.width=1024;sunLight.shadow.mapSize.height=1024;
   sunLight.shadow.camera.near=10;sunLight.shadow.camera.far=800;
-  sunLight.shadow.camera.left=-250;sunLight.shadow.camera.right=250;
-  sunLight.shadow.camera.top=250;sunLight.shadow.camera.bottom=-250;
+  sunLight.shadow.camera.left=-180;sunLight.shadow.camera.right=180;
+  sunLight.shadow.camera.top=180;sunLight.shadow.camera.bottom=-180;
   sunLight.shadow.bias=-0.001;
   scene.add(sunLight);
   const sunSphere=new THREE.Mesh(new THREE.SphereGeometry(8,12,12),new THREE.MeshBasicMaterial({color:0xfff5aa}));
   scene.add(sunSphere);
 
-  // ── SUELO + GRILLA ───────────────────────────────────────────────────────
-  const gnd=new THREE.Mesh(new THREE.PlaneGeometry(1400,1400),new THREE.MeshLambertMaterial({color:0xd0cbc0}));
+  // ── SUELO ────────────────────────────────────────────────────────────────
+  const gnd=new THREE.Mesh(new THREE.PlaneGeometry(1400,1400),new THREE.MeshLambertMaterial({color:0xc8c2b4}));
   gnd.rotation.x=-Math.PI/2;gnd.receiveShadow=true;scene.add(gnd);
-  scene.add(new THREE.GridHelper(700,50,0xbbb8b0,0xc8c4bc));
 
-  // ── CÍRCULO DE ANÁLISIS 300m ─────────────────────────────────────────────
+  // ── CÍRCULO DE ANÁLISIS 150m ─────────────────────────────────────────────
   {
     const pts=[];
-    for(let i=0;i<=128;i++){const a=(i/128)*Math.PI*2;pts.push(new THREE.Vector3(Math.cos(a)*300,0.4,Math.sin(a)*300));}
-    const cl=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineDashedMaterial({color:0xc8900a,dashSize:12,gapSize:6}));
+    for(let i=0;i<=128;i++){const a=(i/128)*Math.PI*2;pts.push(new THREE.Vector3(Math.cos(a)*150,0.4,Math.sin(a)*150));}
+    const cl=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineDashedMaterial({color:0xc8900a,dashSize:8,gapSize:5}));
     cl.computeLineDistances();scene.add(cl);
     const rlbl=document.createElement('div');
     rlbl.style.cssText='position:absolute;font-size:8px;color:#c8900a;font-weight:700;pointer-events:none;z-index:15;background:rgba(255,255,255,0.85);padding:1px 4px;border-radius:2px;transform:translate(-50%,-50%)';
-    rlbl.textContent='r = 300 m';rlbl.dataset.wx=300;rlbl.dataset.wy=2;rlbl.dataset.wz=0;
+    rlbl.textContent='r = 150 m';rlbl.dataset.wx=150;rlbl.dataset.wy=2;rlbl.dataset.wz=0;
     cont.appendChild(rlbl);_3d._extraLabels=[rlbl];
   }
 
@@ -378,6 +387,56 @@ async function drawIso(lat,lon,name){
       shape.moveTo(v.pts[0].x,v.pts[0].z);v.pts.slice(1).forEach(p=>shape.lineTo(p.x,p.z));shape.closePath();
       const geo=new THREE.ExtrudeGeometry(shape,{depth:0.5,bevelEnabled:false});geo.rotateX(-Math.PI/2);
       scene.add(new THREE.Mesh(geo,new THREE.MeshLambertMaterial({color:0x8dc86a,transparent:true,opacity:0.85})));
+    }catch(e){}
+  });
+
+  // ── CALLES ───────────────────────────────────────────────────────────────
+  const streetLabels=[];
+  const hwMeta={
+    motorway:  {w:9, col:0x9e9a8c},
+    trunk:     {w:9, col:0x9e9a8c},
+    primary:   {w:8, col:0xb0ac9c},
+    secondary: {w:7, col:0xbcb8a8},
+    tertiary:  {w:6, col:0xc8c4b4},
+    residential:{w:5,col:0xd4d0c0},
+    unclassified:{w:5,col:0xd4d0c0},
+    living_street:{w:4,col:0xdad6c8},
+    service:   {w:3, col:0xccc8b8},
+    footway:   {w:1.5,col:0xddd0b8},
+    path:      {w:1.5,col:0xddd0b8},
+    cycleway:  {w:2, col:0xc8d4c0},
+    steps:     {w:2, col:0xddd0b8},
+  };
+  const roadMat={};
+  streets.forEach(s=>{
+    try{
+      const{w,col}=hwMeta[s.type]||{w:4,col:0xccc8b8};
+      if(!roadMat[col])roadMat[col]=new THREE.MeshLambertMaterial({color:col});
+      const mat=roadMat[col];
+      // Renderizar cada segmento como caja plana con ancho real
+      for(let i=0;i<s.pts.length-1;i++){
+        const a=s.pts[i],b=s.pts[i+1];
+        const dx=b.x-a.x,dz=b.z-a.z;
+        const len=Math.sqrt(dx*dx+dz*dz);
+        if(len<0.3)continue;
+        const mx=(a.x+b.x)/2,mz=(a.z+b.z)/2;
+        const geo=new THREE.BoxGeometry(w,0.18,len);
+        const mesh=new THREE.Mesh(geo,mat);
+        mesh.position.set(mx,0.09,mz);
+        mesh.rotation.y=Math.atan2(dx,dz);
+        mesh.receiveShadow=true;
+        scene.add(mesh);
+      }
+      // Etiqueta de nombre en el punto medio de la vía
+      if(s.name){
+        const mid=Math.floor(s.pts.length/2);
+        const mp=s.pts[mid];
+        const lbl=document.createElement('div');
+        lbl.style.cssText='position:absolute;font-size:7px;color:#333320;pointer-events:none;z-index:13;white-space:nowrap;background:rgba(255,255,255,0.88);padding:1px 4px;border-radius:2px;transform:translate(-50%,-50%);border:0.5px solid #ccc8b0';
+        lbl.textContent=s.name;
+        lbl.dataset.wx=mp.x;lbl.dataset.wy=0.5;lbl.dataset.wz=mp.z;
+        cont.appendChild(lbl);streetLabels.push(lbl);
+      }
     }catch(e){}
   });
 
@@ -467,7 +526,7 @@ async function drawIso(lat,lon,name){
   }
 
   // ── PROYECCIÓN DOM LABELS ────────────────────────────────────────────────
-  const allLabels=[...heightLabels,...(_3d._extraLabels||[])];
+  const allLabels=[...heightLabels,...streetLabels,...(_3d._extraLabels||[])];
   function updateLabels(){
     allLabels.forEach(lbl=>{
       const v=new THREE.Vector3(+lbl.dataset.wx,+lbl.dataset.wy,+lbl.dataset.wz).project(camera);
@@ -495,78 +554,109 @@ async function drawIso(lat,lon,name){
 
 function drawWindRose(mdata){
   const cv=document.getElementById('wind-canvas');
-  const ctx=cv.getContext('2d');
-  const W=cv.width,H=cv.height;
-  ctx.fillStyle=PANEL;ctx.fillRect(0,0,W,H);
-  const cx=W/2,cy=H/2+4,R=Math.min(W,H)*0.33;
+  const dpr=Math.min(window.devicePixelRatio||1,2);
+  const DW=Math.max(cv.parentElement.clientWidth-24,260);
+  const DH=250;
+  cv.width=DW*dpr;cv.height=DH*dpr;
+  cv.style.width='100%';cv.style.height=DH+'px';
+  const ctx=cv.getContext('2d');ctx.scale(dpr,dpr);
+  const W=DW,H=DH,cx=W/2,cy=H/2+6,R=Math.min(W,H)*0.33;
 
   if(!mdata){
-    ctx.fillStyle=GRAY;ctx.font='11px sans-serif';ctx.textAlign='center';
+    ctx.fillStyle=PANEL;ctx.fillRect(0,0,W,H);
+    ctx.fillStyle=GRAY;ctx.font='12px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
     ctx.fillText('Sin datos',cx,cy);return;
   }
 
-  const bins=Array(16).fill(0);
+  // Frecuencia por dirección (16 bins)
+  const bcnt=Array(16).fill(0),bspd=Array(16).fill(0);
   mdata.forEach(m=>{
     if(m.wd!=null&&m.ws!=null){
       const b=Math.round(((m.wd%360)+360)%360/22.5)%16;
-      bins[b]+=m.ws;
+      bcnt[b]++;bspd[b]+=m.ws;
     }
   });
-  const maxB=Math.max(...bins)||1;
+  const maxCnt=Math.max(...bcnt)||1;
+  const avgSpd=bcnt.map((c,i)=>c>0?bspd[i]/c:0);
   const wsVals=mdata.map(m=>m.ws).filter(v=>v!=null);
-  const maxWs=Math.max(...wsVals)||20;
 
-  // Anillos de referencia con etiquetas
-  [0.33,0.66,1].forEach((f,i)=>{
-    ctx.strokeStyle=DGRAY;ctx.lineWidth=0.6;
-    ctx.setLineDash([3,3]);
-    ctx.beginPath();ctx.arc(cx,cy,R*f,0,Math.PI*2);ctx.stroke();
-    ctx.setLineDash([]);
-    const spd=Math.round(maxWs*f);
-    ctx.fillStyle='#bbb';ctx.font='7px sans-serif';ctx.textAlign='left';
-    ctx.fillText(`${spd}`,cx+R*f+2,cy-2);
-  });
+  function drawFrame(prog){
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle=PANEL;ctx.fillRect(0,0,W,H);
 
-  // Ejes cardinales
-  const dirs16=['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSO','SO','OSO','O','ONO','NO','NNO'];
-  const dirs8=['N','NE','E','SE','S','SO','O','NO'];
-  for(let i=0;i<16;i++){
-    const a=toRad(90-i*22.5);
-    ctx.strokeStyle=i%2===0?'#ccc8c0':'#e0ddd8';ctx.lineWidth=0.5;
-    ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(a)*R,cy-Math.sin(a)*R);ctx.stroke();
+    // Fondo radial dentro del círculo
+    const bg=ctx.createRadialGradient(cx,cy,0,cx,cy,R);
+    bg.addColorStop(0,'#eef3fa');bg.addColorStop(1,'#f9f8f6');
+    ctx.fillStyle=bg;ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.fill();
+
+    // Anillos de referencia
+    [0.25,0.5,0.75,1].forEach((f,i)=>{
+      ctx.strokeStyle=i===3?'#b8b0a0':'#ddd8d0';
+      ctx.lineWidth=i===3?1:0.5;
+      ctx.setLineDash(i===3?[]:[3,4]);
+      ctx.beginPath();ctx.arc(cx,cy,R*f,0,Math.PI*2);ctx.stroke();
+      ctx.setLineDash([]);
+      const dias=Math.round(maxCnt*f);
+      if(dias>0&&i<3){
+        ctx.fillStyle='#aaa';ctx.font='7px sans-serif';ctx.textAlign='left';ctx.textBaseline='middle';
+        ctx.fillText(dias+'d',cx+R*f+3,cy);
+      }
+    });
+
+    // Radios (16 ejes)
+    for(let i=0;i<16;i++){
+      const a=toRad(90-i*22.5);
+      ctx.strokeStyle=i%2===0?'#ccc8c0':'#e8e5e0';ctx.lineWidth=0.5;
+      ctx.beginPath();ctx.moveTo(cx,cy);
+      ctx.lineTo(cx+Math.cos(a)*R,cy-Math.sin(a)*R);ctx.stroke();
+    }
+
+    // Pétalos animados con gradiente
+    bcnt.forEach((cnt,i)=>{
+      if(!cnt)return;
+      const r=R*(cnt/maxCnt)*prog;
+      const ang=toRad(90-i*22.5);
+      const half=toRad(10.5);
+      const t=avgSpd[i]/(Math.max(...avgSpd)||20);
+      const tipX=cx+Math.cos(ang)*r,tipY=cy-Math.sin(ang)*r;
+      const grad=ctx.createLinearGradient(cx,cy,tipX,tipY);
+      const [r1,g1,b1]=t>0.65?[200,60,30]:t>0.35?[200,140,10]:[30,100,190];
+      grad.addColorStop(0,`rgba(${r1},${g1},${b1},0.25)`);
+      grad.addColorStop(1,`rgba(${r1},${g1},${b1},0.88)`);
+      ctx.beginPath();ctx.moveTo(cx,cy);
+      ctx.arc(cx,cy,r,-(ang+half),-(ang-half),false);
+      ctx.closePath();
+      ctx.fillStyle=grad;ctx.fill();
+      ctx.strokeStyle=`rgba(${r1},${g1},${b1},0.7)`;ctx.lineWidth=0.7;ctx.stroke();
+    });
+
+    // Etiquetas cardinales
+    [['N',90],['NE',45],['E',0],['SE',-45],['S',-90],['SO',-135],['O',180],['NO',135]].forEach(([nm,ad])=>{
+      const a=toRad(ad);
+      const lx=cx+Math.cos(a)*(R+16),ly=cy-Math.sin(a)*(R+16);
+      ctx.fillStyle=nm==='N'?ACCENT:'#444';
+      ctx.font=nm==='N'?'bold 11px sans-serif':'8px sans-serif';
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(nm,lx,ly);
+    });
+
+    // Centro
+    ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(cx,cy,6,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle=ACCENT;ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(cx,cy,6,0,Math.PI*2);ctx.stroke();
   }
-  dirs8.forEach((d,i)=>{
-    const a=toRad(90-i*45);
-    const lx=cx+Math.cos(a)*(R+14),ly=cy-Math.sin(a)*(R+14);
-    ctx.fillStyle=d==='N'?ACCENT:LGRAY;
-    ctx.font=d==='N'?'bold 9px sans-serif':'8px sans-serif';
-    ctx.textAlign='center';ctx.fillText(d,lx,ly+3);
-  });
 
-  // Pétalos rellenos por sector
-  bins.forEach((v,i)=>{
-    if(!v)return;
-    const r=R*(v/maxB);
-    const ang=toRad(90-i*22.5);
-    const half=toRad(11.25);
-    const t=v/maxB;
-    // Color: azul (calma) → naranja → rojo (fuerte)
-    const col=t>0.75?ORANGE:t>0.4?ACCENT2:'#70aad4';
-    ctx.beginPath();
-    ctx.moveTo(cx,cy);
-    ctx.arc(cx,cy,r,-(ang+half),-(ang-half),false);
-    ctx.closePath();
-    ctx.fillStyle=col+'cc';
-    ctx.fill();
-    ctx.strokeStyle=col;ctx.lineWidth=0.8;ctx.stroke();
-  });
-
-  // Centro
-  ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(cx,cy,5,0,Math.PI*2);ctx.fill();
-  ctx.strokeStyle=ACCENT;ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(cx,cy,5,0,Math.PI*2);ctx.stroke();
+  // Animación de entrada (petals crecen)
+  const dur=1000,t0=performance.now();
+  function tick(now){
+    const p=Math.min((now-t0)/dur,1);
+    const ease=1-Math.pow(1-p,3);
+    drawFrame(ease);
+    if(p<1)requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
 
   // Leyenda
-  const maxIdx=bins.indexOf(maxB);
+  const maxIdx=bcnt.indexOf(maxCnt);
   const domDir=windDirName(maxIdx*22.5);
   const wsAvg=avg(wsVals);
   document.getElementById('wind-legend').innerHTML=
@@ -574,73 +664,147 @@ function drawWindRose(mdata){
 }
 
 function drawSunPath(lat){
+  if(_sunAnimId){cancelAnimationFrame(_sunAnimId);_sunAnimId=null;}
   const cv=document.getElementById('sun-canvas');
-  const ctx=cv.getContext('2d');
-  const W=cv.width,H=cv.height;
-  const cx=W/2,cy=H/2+6,R=Math.min(W,H)*0.35;
+  const dpr=Math.min(window.devicePixelRatio||1,2);
+  const DW=Math.max(cv.parentElement.clientWidth-24,260);
+  const DH=250;
+  cv.width=DW*dpr;cv.height=DH*dpr;
+  cv.style.width='100%';cv.style.height=DH+'px';
+  const ctx=cv.getContext('2d');ctx.scale(dpr,dpr);
+  const W=DW,H=DH,cx=W/2,cy=H/2+8,R=Math.min(W,H)*0.36;
 
-  // Fondo cielo con degradado
-  const sky=ctx.createRadialGradient(cx,cy,0,cx,cy,R);
-  sky.addColorStop(0,'#c8dff5');sky.addColorStop(1,'#e8f2fc');
+  // ── FONDO ────────────────────────────────────────────────────────────────
   ctx.fillStyle=PANEL;ctx.fillRect(0,0,W,H);
-  ctx.fillStyle=sky;ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.fill();
 
-  // Anillos de altitud (90°, 60°, 30°, horizonte)
-  [1,0.67,0.33].forEach((f,i)=>{
-    ctx.strokeStyle=i===2?'#8ab0d0':'#b8d0e8';ctx.lineWidth=i===2?1:0.5;
-    ctx.setLineDash(i===2?[]:[3,4]);
+  // Cielo con clip al círculo
+  ctx.save();
+  ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.clip();
+  const skyG=ctx.createRadialGradient(cx,cy-R*0.2,R*0.05,cx,cy,R);
+  skyG.addColorStop(0,'#5fa8d8');skyG.addColorStop(0.55,'#a8cee8');skyG.addColorStop(1,'#d8eef8');
+  ctx.fillStyle=skyG;ctx.fillRect(cx-R,cy-R,R*2,R*2);
+  ctx.restore();
+
+  // Borde círculo horizonte
+  ctx.strokeStyle='#6090b0';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.stroke();
+
+  // ── ANILLOS DE ALTITUD ───────────────────────────────────────────────────
+  [[0.33,'60°'],[0.67,'30°']].forEach(([f,lbl])=>{
+    ctx.strokeStyle='rgba(255,255,255,0.45)';ctx.lineWidth=0.8;
+    ctx.setLineDash([4,5]);
     ctx.beginPath();ctx.arc(cx,cy,R*f,0,Math.PI*2);ctx.stroke();
     ctx.setLineDash([]);
-    if(i<2){const lbl=['30°','60°'][i];ctx.fillStyle='#88aac8';ctx.font='7px sans-serif';ctx.textAlign='left';ctx.fillText(lbl,cx+R*f+2,cy-2);}
+    ctx.fillStyle='rgba(255,255,255,0.75)';ctx.font='7px sans-serif';
+    ctx.textAlign='left';ctx.textBaseline='middle';
+    ctx.fillText(lbl,cx+R*f+3,cy);
   });
 
-  // Ejes + labels cardinales
+  // ── EJES CARDINALES ──────────────────────────────────────────────────────
   [['N',90],['S',270],['E',0],['O',180]].forEach(([nm,ang])=>{
     const a=toRad(ang);
-    ctx.strokeStyle='#b0c8e0';ctx.lineWidth=0.5;
+    ctx.strokeStyle='rgba(255,255,255,0.3)';ctx.lineWidth=0.7;
     ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(a)*R,cy+Math.sin(a)*R);ctx.stroke();
-    const lx=cx+Math.cos(a)*(R+13),ly=cy+Math.sin(a)*(R+13);
-    ctx.fillStyle=nm==='N'?ACCENT:'#444';
-    ctx.font=nm==='N'?'bold 9px sans-serif':'9px sans-serif';
-    ctx.textAlign='center';ctx.fillText(nm,lx,ly+3);
+    const lx=cx+Math.cos(a)*(R+15),ly=cy+Math.sin(a)*(R+15);
+    ctx.fillStyle=nm==='S'?ACCENT:'#222';
+    ctx.font=nm==='S'?'bold 11px sans-serif':'9px sans-serif';
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(nm,lx,ly);
   });
 
-  function drawPath(doy,col,lw){
+  // ── TRAYECTORIAS ─────────────────────────────────────────────────────────
+  function getSunPts(doy){
     const pts=[];
-    for(let s=0;s<300;s++){
-      const hr=4+s*(16/299);
+    for(let s=0;s<=320;s++){
+      const hr=4+s*(16/320);
       const{alt,az}=sunAltAz(lat,doy,hr);
       if(alt<0)continue;
       const r=R*(1-alt/90);
-      pts.push({x:cx+r*Math.sin(toRad(az)),y:cy+r*Math.cos(toRad(az))});
+      pts.push({x:cx+r*Math.sin(toRad(az)),y:cy+r*Math.cos(toRad(az)),hr,alt});
     }
+    return pts;
+  }
+
+  function drawPath(pts,col,lw,dash){
     if(pts.length<2)return;
-    ctx.strokeStyle=col;ctx.lineWidth=lw||1.6;
+    ctx.save();
+    ctx.strokeStyle=col;ctx.lineWidth=lw;ctx.lineJoin='round';ctx.lineCap='round';
+    if(dash)ctx.setLineDash(dash);
     ctx.beginPath();ctx.moveTo(pts[0].x,pts[0].y);
     pts.forEach(p=>ctx.lineTo(p.x,p.y));ctx.stroke();
+    ctx.restore();
   }
-  drawPath(172,'#4a90d9',1.4);
-  drawPath(80,'#2a9a50',1.6);
-  drawPath(355,'#c84020',1.4);
 
-  // Marcadores de hora en equinoccio
+  const ptsJun=getSunPts(172);
+  const ptsEq =getSunPts(80);
+  const ptsDec=getSunPts(355);
+
+  // Sombra suave bajo cada trayectoria
+  ctx.filter='blur(2px)';
+  drawPath(ptsJun,'rgba(40,100,200,0.25)',4);
+  drawPath(ptsDec,'rgba(200,50,20,0.25)',4);
+  drawPath(ptsEq, 'rgba(30,140,60,0.25)',5);
+  ctx.filter='none';
+
+  drawPath(ptsJun,'#4a90d9',1.8);
+  drawPath(ptsDec,'#c84020',1.8);
+  drawPath(ptsEq, '#2a9a50',2.5);
+
+  // ── MARCADORES DE HORA (equinoccio) ─────────────────────────────────────
   [6,9,12,15,18].forEach(hr=>{
     const{alt,az}=sunAltAz(lat,80,hr);
-    if(alt<0)return;
+    if(alt<=0)return;
     const r=R*(1-alt/90);
     const px=cx+r*Math.sin(toRad(az)),py=cy+r*Math.cos(toRad(az));
-    ctx.fillStyle='#2a9a50';ctx.beginPath();ctx.arc(px,py,2.5,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle='#1a6040';ctx.font='7px sans-serif';ctx.textAlign='center';
-    ctx.fillText(hr+'h',px,py-5);
+    // Halo
+    ctx.fillStyle='rgba(255,255,255,0.6)';
+    ctx.beginPath();ctx.arc(px,py,4.5,0,Math.PI*2);ctx.fill();
+    // Punto
+    ctx.fillStyle='#2a9a50';
+    ctx.beginPath();ctx.arc(px,py,3,0,Math.PI*2);ctx.fill();
+    // Etiqueta con fondo
+    const lbl=hr+'h';
+    ctx.font='bold 7px sans-serif';ctx.textAlign='center';ctx.textBaseline='bottom';
+    const tw=ctx.measureText(lbl).width;
+    ctx.fillStyle='rgba(255,255,255,0.82)';
+    ctx.fillRect(px-tw/2-2,py-14,tw+4,10);
+    ctx.fillStyle='#1a6040';ctx.fillText(lbl,px,py-5);
   });
 
-  // Sol al mediodía equinoccio
-  const{alt:a0,az:az0}=sunAltAz(lat,80,12);
-  const sr=R*(1-a0/90);
-  const spx=cx+sr*Math.sin(toRad(az0)),spy=cy+sr*Math.cos(toRad(az0));
-  const sg=ctx.createRadialGradient(spx,spy,0,spx,spy,8);
-  sg.addColorStop(0,'#ffee88');sg.addColorStop(1,'#f0a020');
-  ctx.fillStyle=sg;ctx.beginPath();ctx.arc(spx,spy,6,0,Math.PI*2);ctx.fill();
+  // ── GUARDAR IMAGEN ESTÁTICA para animación ───────────────────────────────
+  const imgData=ctx.getImageData(0,0,cv.width,cv.height);
+
+  // ── ANIMACIÓN: SOL VIAJANDO POR EQUINOCCIO ───────────────────────────────
+  if(ptsEq.length<2)return;
+  const cycleDur=6000;
+  const t0=performance.now();
+
+  function tickSun(now){
+    const frac=((now-t0)%cycleDur)/cycleDur;
+    const idx=Math.floor(frac*(ptsEq.length-1));
+    const pt=ptsEq[idx];
+    const altFrac=pt.alt/90; // 0=horizonte, 1=cénit
+
+    // Restaurar fondo estático
+    ctx.putImageData(imgData,0,0);
+
+    // Brillo ambiental (aura grande)
+    const aura=ctx.createRadialGradient(pt.x,pt.y,0,pt.x,pt.y,22);
+    const warmth=`rgba(255,${Math.round(200+altFrac*55)},${Math.round(60+altFrac*60)},`;
+    aura.addColorStop(0,warmth+'0.35)');
+    aura.addColorStop(1,warmth+'0)');
+    ctx.fillStyle=aura;ctx.beginPath();ctx.arc(pt.x,pt.y,22,0,Math.PI*2);ctx.fill();
+
+    // Disco solar
+    const sg=ctx.createRadialGradient(pt.x,pt.y,0,pt.x,pt.y,9);
+    sg.addColorStop(0,'#fffde0');
+    sg.addColorStop(0.5,`rgb(255,${Math.round(200+altFrac*55)},${Math.round(40+altFrac*60)})`);
+    sg.addColorStop(1,`rgba(255,${Math.round(160+altFrac*40)},0,0.6)`);
+    ctx.fillStyle=sg;ctx.beginPath();ctx.arc(pt.x,pt.y,9,0,Math.PI*2);ctx.fill();
+
+    _sunAnimId=requestAnimationFrame(tickSun);
+  }
+  _sunAnimId=requestAnimationFrame(tickSun);
 }
 
 function renderAll(lat,mdata){

@@ -95,7 +95,7 @@ h1{font-size:18px;font-weight:700;color:#1a1820;letter-spacing:.5px;margin-botto
 
 <div class="main-grid">
   <div class="panel clima-panel" id="clima-panel">
-    <div class="panel-title">CLIMA HISTÓRICO</div>
+    <div class="panel-title">CLIMA HISTÓRICO <span style="font-weight:400;color:#bbb;font-size:9px">(30 años ERA5)</span></div>
     <div id="clima-rows"><div style="color:#aaa;font-size:11px;padding:8px">Esperando datos...</div></div>
     <div class="bar-chart" id="bar-chart"></div>
   </div>
@@ -284,10 +284,10 @@ function koppenClassify(months){
 // ─── APIs ────────────────────────────────────────────────────────────────────
 async function fetchClimate(lat,lon){
   const setStatus=(t,c)=>{const s=document.getElementById('status');s.textContent=t;s.style.color=c};
-  setStatus('Consultando clima histórico...','#e8b84b');
+  setStatus('Consultando 30 años de datos ERA5...','#e8b84b');
   const today=new Date();
   const end=new Date(today);end.setDate(end.getDate()-1);
-  const start=new Date(today);start.setFullYear(start.getFullYear()-1);
+  const start=new Date(today);start.setFullYear(start.getFullYear()-30);
   const d2=x=>x.toISOString().slice(0,10);
   const url=`https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}`+
     `&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,windspeed_10m_max,`+

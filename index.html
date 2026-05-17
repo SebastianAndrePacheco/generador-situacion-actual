@@ -216,40 +216,28 @@ function updateSun(){
   if(!_3d.map||_3d.lat==null)return;
   const{alt,az}=sunAltAz(_3d.lat,doy,hour);
 
-  if(alt<=0){
-    // Noche — luz nocturna azulada muy tenue
-    if(typeof _3d.map.setLights==='function'){
+  const nightMode=alt<=0;
+  const polar=nightMode?85:Math.min(75,Math.max(15,90-alt));
+  const t=nightMode?0:Math.min(alt/50,1);
+  const intensity=nightMode?0.08:0.18+t*0.82;   // 0.18 amanecer → 1.0 mediodía
+  const color=nightMode?'#0d1830':(alt<18?`hsl(32,${Math.round(60-alt*2)}%,${Math.round(76+alt)}%)`:'#fff7ee');
+
+  // Legacy API: SIEMPRE — produce face-shading en cualquier estilo
+  _3d.map.setLight({anchor:'map',position:[1.5,az,polar],color,intensity});
+
+  // Nueva API v4: además intenta sombras proyectadas (solo si el estilo lo soporta)
+  if(!nightMode&&typeof _3d.map.setLights==='function'){
+    try{
       _3d.map.setLights([
-        {id:'ambient',type:'ambient',properties:{color:'#1a2040',intensity:0.18}},
-        {id:'sun',type:'directional',properties:{color:'#1a2040',intensity:0.05,direction:[az,85],'cast-shadows':false}}
+        {id:'ambient',type:'ambient',properties:{color:'#c8d8f0',intensity:0.25}},
+        {id:'sun',type:'directional',properties:{
+          color, intensity,
+          direction:[az,polar],
+          'cast-shadows':true,
+          'shadow-intensity':0.3+t*0.55
+        }}
       ]);
-    }else{
-      _3d.map.setLight({anchor:'map',position:[1.5,az,85],color:'#1a2040',intensity:0.1});
-    }
-    return;
-  }
-
-  // Ángulo: polar 0°=cenital, 90°=horizonte → máx sombras cuando sol está bajo
-  const polar=Math.min(78,Math.max(12,90-alt));
-  const t=Math.min(alt/55,1);
-  const intensity=0.2+t*0.75;                    // 0.2 amanecer → 0.95 mediodía
-  const shadowI=0.3+t*0.55;                      // 0.3 → 0.85
-  const color=alt<20?`hsl(32,${Math.round(55-alt)}%,${Math.round(78+alt)}%)`:'#fff7ee'; // cálido al amanecer
-
-  if(typeof _3d.map.setLights==='function'){
-    // MapLibre GL JS v4: sombras reales proyectadas
-    _3d.map.setLights([
-      {id:'ambient',type:'ambient',properties:{color:'#ccd8f0',intensity:0.28}},
-      {id:'sun',type:'directional',properties:{
-        color, intensity,
-        direction:[az,polar],
-        'cast-shadows':true,
-        'shadow-intensity':shadowI
-      }}
-    ]);
-  }else{
-    // Fallback legacy: solo shading de caras
-    _3d.map.setLight({anchor:'map',position:[1.5,az,polar],color,intensity});
+    }catch(_){}
   }
 }
 

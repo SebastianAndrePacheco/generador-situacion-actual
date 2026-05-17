@@ -257,6 +257,23 @@ async function fetchShadowBuildings(lat,lon){
   }catch(_){return[];}
 }
 
+function convexHull(pts){
+  const p=pts.slice().sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
+  const cross=(o,a,b)=>(a[0]-o[0])*(b[1]-o[1])-(a[1]-o[1])*(b[0]-o[0]);
+  const lo=[],hi=[];
+  for(const v of p){
+    while(lo.length>=2&&cross(lo[lo.length-2],lo[lo.length-1],v)<=0)lo.pop();
+    lo.push(v);
+  }
+  for(let i=p.length-1;i>=0;i--){
+    const v=p[i];
+    while(hi.length>=2&&cross(hi[hi.length-2],hi[hi.length-1],v)<=0)hi.pop();
+    hi.push(v);
+  }
+  hi.pop(); lo.pop();
+  return[...lo,...hi];
+}
+
 function updateShadowLayer(){
   if(!_3d.map||!_shadowBuildings?.length)return;
   const hour=parseFloat(document.getElementById('sun-hour').value);
@@ -264,19 +281,20 @@ function updateShadowLayer(){
   const{alt,az}=sunAltAz(_3d.lat,doy,hour);
   const src=_3d.map.getSource('shadows');
   if(!src)return;
-  if(alt<=2){src.setData({type:'FeatureCollection',features:[]});return;}
+  if(alt<=3){src.setData({type:'FeatureCollection',features:[]});return;}
   const shadowDir=(az+180)%360;
   const mPerLon=111320*Math.cos(toRad(_3d.lat)),mPerLat=110540;
   const features=[];
   for(const{ring,h}of _shadowBuildings){
-    const sLen=Math.min(h/Math.tan(toRad(alt)),150);
+    const sLen=Math.min(h/Math.tan(toRad(alt)),80); // cap 80m
     const dx=Math.sin(toRad(shadowDir))*sLen/mPerLon;
     const dy=Math.cos(toRad(shadowDir))*sLen/mPerLat;
     const n=ring.length-1;
     const proj=ring.slice(0,n).map(([lo,la])=>[lo+dx,la+dy]);
-    const poly=[...ring.slice(0,n),...proj.slice().reverse()];
-    poly.push(poly[0]);
-    features.push({type:'Feature',geometry:{type:'Polygon',coordinates:[poly]}});
+    // Convex hull de todos los puntos → siempre polígono válido sin auto-intersecciones
+    const hull=convexHull([...ring.slice(0,n),...proj]);
+    hull.push(hull[0]);
+    features.push({type:'Feature',geometry:{type:'Polygon',coordinates:[hull]}});
   }
   src.setData({type:'FeatureCollection',features});
 }
@@ -320,7 +338,7 @@ function drawIso(lat,lon,name){
     const firstExtLayer=map.getStyle().layers.find(l=>l.type==='fill-extrusion');
     map.addSource('shadows',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
     map.addLayer({id:'building-shadows',type:'fill',source:'shadows',
-      paint:{'fill-color':'#000000','fill-opacity':0.28,'fill-antialias':false}
+      paint:{'fill-color':'#000000','fill-opacity':0.20,'fill-antialias':false}
     },firstExtLayer?.id);
     _shadowBuildings=null;
     fetchShadowBuildings(lat,lon).then(b=>{_shadowBuildings=b;updateShadowLayer();});

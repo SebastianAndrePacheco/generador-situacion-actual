@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Generador — Situación Actual Climática</title>
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4/dist/maplibre-gl.css">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#f2f0eb;color:#1a1820;font-family:sans-serif;padding:16px}
@@ -76,8 +77,8 @@ h1{font-size:18px;font-weight:700;color:#1a1820;letter-spacing:.5px;margin-botto
   </div>
 
   <div class="panel iso-panel" style="min-height:340px">
-    <div class="panel-title">EMPLAZAMIENTO — EDIFICIOS REALES (OSM)</div>
-    <div id="iso-canvas" style="width:100%;flex:1;min-height:280px">
+    <div class="panel-title">EMPLAZAMIENTO — MAPA 3D</div>
+    <div id="iso-canvas" style="width:100%;flex:1;min-height:320px;position:relative;overflow:hidden;border-radius:4px">
       <div style="color:#555;font-size:11px;padding:20px;text-align:center">Presiona Generar análisis</div>
     </div>
     <div id="sun-controls" style="display:none;padding:6px 4px 0;display:flex;gap:8px;align-items:center">
@@ -113,12 +114,11 @@ h1{font-size:18px;font-weight:700;color:#1a1820;letter-spacing:.5px;margin-botto
 </div>
 
 <div class="footer">
-  <span>Fuentes: Open-Meteo Archive API (1 año) · Edificios: OpenStreetMap/Overpass · Astronomía: NOAA</span>
+  <span>Fuentes: Open-Meteo Archive API (1 año) · Mapa: OpenFreeMap / OpenStreetMap · Astronomía: NOAA</span>
   <span id="footer-coords"></span>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://unpkg.com/maplibre-gl@4/dist/maplibre-gl.js"></script>
 <script>
 const ACCENT='#c8900a',ACCENT2='#1a6db0',ORANGE='#c84020',TEAL='#0a9080',GREEN='#1a9040',RED='#c82020',GRAY='#888',LGRAY='#222',BG='#f2f0eb',PANEL='#ffffff',DGRAY='#ddd8d0';
 
@@ -206,380 +206,89 @@ function processDaily(data){
   }));
 }
 
-const _3d={renderer:null,animId:null,sunLight:null,sunSphere:null,lat:null,scene:null,sunArcLine:null,windArrow:null};
+const _3d={animId:null,lat:null,map:null};
 let _sunAnimId=null;
 
-function sunPos3D(lat,doy,hour,dist=380){
-  const{alt,az}=sunAltAz(lat,doy,hour);
-  if(alt<0)return null;
-  const aR=toRad(alt),azR=toRad(az);
-  return{x:dist*Math.sin(azR)*Math.cos(aR),y:dist*Math.sin(aR),z:-dist*Math.cos(azR)*Math.cos(aR)};
-}
-
-function buildSunArcLine(lat,doy){
-  const pts=[];
-  for(let h=4;h<=20;h+=0.15){
-    const{alt,az}=sunAltAz(lat,doy,h);
-    if(alt<0)continue;
-    const aR=toRad(alt),azR=toRad(az);
-    pts.push(new THREE.Vector3(380*Math.sin(azR)*Math.cos(aR),380*Math.sin(aR),-380*Math.cos(azR)*Math.cos(aR)));
-  }
-  if(pts.length<2)return null;
-  const col={80:0x2a9a50,355:0xc84020,172:0x4a90d9}[doy]||0xf0a020;
-  return new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:col}));
-}
-
-function addWindArrow3D(dir){
-  if(dir==null||!_3d.scene)return;
-  if(_3d.windArrow)_3d.scene.remove(_3d.windArrow);
-  const azR=toRad(dir);
-  const direction=new THREE.Vector3(Math.sin(azR),0,-Math.cos(azR)).normalize();
-  _3d.windArrow=new THREE.ArrowHelper(direction,new THREE.Vector3(0,6,0),90,0x1a6db0,20,12);
-  _3d.scene.add(_3d.windArrow);
-}
-
 function updateSun(){
-  if(!_3d.sunLight||!_3d.sunSphere||_3d.lat==null)return;
   const hour=parseFloat(document.getElementById('sun-hour').value);
   const doy=parseInt(document.getElementById('sun-doy').value);
   document.getElementById('sun-hour-val').textContent=fmtH(hour);
-  const p=sunPos3D(_3d.lat,doy,hour);
-  if(p){
-    _3d.sunLight.position.set(p.x,p.y,p.z);
-    _3d.sunLight.intensity=1.4;
-    _3d.sunSphere.position.set(p.x,p.y,p.z);
-    _3d.sunSphere.visible=true;
-    const{alt}=sunAltAz(_3d.lat,doy,hour);
-    const t=Math.min(alt/45,1);
-    _3d.sunSphere.material.color.setRGB(1,0.6+0.4*t,0.3+0.7*t);
-    _3d.sunLight.color.setRGB(1,0.6+0.4*t,0.3+0.7*t);
-  }else{
-    _3d.sunLight.intensity=0.15;
-    _3d.sunSphere.visible=false;
-  }
-  if(_3d.scene){
-    if(_3d.sunArcLine)_3d.scene.remove(_3d.sunArcLine);
-    _3d.sunArcLine=buildSunArcLine(_3d.lat,doy);
-    if(_3d.sunArcLine)_3d.scene.add(_3d.sunArcLine);
-  }
+  if(!_3d.map||_3d.lat==null)return;
+  const{alt,az}=sunAltAz(_3d.lat,doy,hour);
+  const polar=Math.max(2,90-alt);
+  const intensity=alt>0?0.1+Math.min(alt/80,1)*0.55:0.05;
+  _3d.map.setLight({anchor:'map',position:[1.5,az,polar],color:'white',intensity});
 }
 
-function ll2xz(lat,lon,clat,clon){
-  const R=6371000;
-  const x=(lon-clon)*Math.PI/180*R*Math.cos(clat*Math.PI/180);
-  const z=-(lat-clat)*Math.PI/180*R;
-  return{x,z};
-}
+function drawIso(lat,lon,name){
+  if(_3d.animId){cancelAnimationFrame(_3d.animId);_3d.animId=null;}
+  if(_3d.map){_3d.map.remove();_3d.map=null;}
 
-async function fetchOSMData(lat,lon){
-  const R=150;
-  const q=`[out:json][timeout:25];(way["building"](around:${R},${lat},${lon});way["leisure"="park"](around:${R},${lat},${lon});way["landuse"~"^(grass|park|garden|green)$"](around:${R},${lat},${lon});way["natural"~"^(wood|grassland|scrub)$"](around:${R},${lat},${lon});way["highway"~"^(primary|secondary|tertiary|residential|unclassified|living_street|trunk|motorway)$"](around:${R},${lat},${lon}););out body;>;out skel qt;`;
-  try{
-    const r=await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(q)}`);
-    if(!r.ok)throw new Error(r.status);
-    return await r.json();
-  }catch(e){return null;}
-}
-
-function parseOSM(osm,clat,clon){
-  if(!osm)return{buildings:[],vegetation:[],streets:[]};
-  const nodes={};
-  osm.elements.forEach(e=>{if(e.type==='node')nodes[e.id]={lat:e.lat,lon:e.lon};});
-  const buildings=[],vegetation=[],streets=[];
-  osm.elements.forEach(e=>{
-    if(e.type!=='way'||!e.nodes)return;
-    const pts=e.nodes.map(id=>nodes[id]?ll2xz(nodes[id].lat,nodes[id].lon,clat,clon):null).filter(Boolean);
-    if(pts.length<2)return;
-    if(e.tags&&e.tags.building){
-      if(pts.length<3)return;
-      const lv=parseInt(e.tags['building:levels'])||null;
-      const ht=parseFloat(e.tags['height'])||null;
-      const height=ht||(lv?lv*3.2:5+Math.random()*15);
-      buildings.push({pts,height,tags:e.tags});
-    }else if(e.tags&&(e.tags.leisure||e.tags.landuse||e.tags.natural)){
-      if(pts.length<3)return;
-      vegetation.push({pts,tags:e.tags});
-    }else if(e.tags&&e.tags.highway){
-      const hw=e.tags.highway;
-      // skip paths/footways without names
-      const minor=['footway','path','cycleway','steps','service'];
-      if(minor.includes(hw)&&!e.tags.name)return;
-      streets.push({pts,name:e.tags.name||null,type:hw});
-    }
-  });
-  return{buildings,vegetation,streets};
-}
-
-function ptInPoly(px,pz,pts){
-  let inside=false;
-  for(let i=0,j=pts.length-1;i<pts.length;j=i++){
-    const xi=pts[i].x,zi=pts[i].z,xj=pts[j].x,zj=pts[j].z;
-    if((zi>pz)!==(zj>pz)&&px<(xj-xi)*(pz-zi)/(zj-zi)+xi)inside=!inside;
-  }
-  return inside;
-}
-
-async function drawIso(lat,lon,name){
   const cont=document.getElementById('iso-canvas');
-  cont.innerHTML='<div style="color:#c8900a;font-size:11px;padding:20px;text-align:center">Cargando edificios OSM...</div>';
-
-  if(_3d.animId)cancelAnimationFrame(_3d.animId);
-  if(_3d.renderer){_3d.renderer.dispose();_3d.renderer=null;}
-  _3d.scene=null;_3d.sunArcLine=null;_3d.windArrow=null;
-
-  const W=cont.clientWidth||420,H=cont.clientHeight||300;
-  const osm=await fetchOSMData(lat,lon);
-  const{buildings,vegetation,streets}=parseOSM(osm,lat,lon);
   cont.innerHTML='';
 
-  const scene=new THREE.Scene();
-  scene.background=new THREE.Color(0xd8e8f5);
-  scene.fog=new THREE.FogExp2(0xd8e8f5,0.002);
+  const mapDiv=document.createElement('div');
+  mapDiv.style.cssText='position:absolute;top:0;left:0;width:100%;height:100%;';
+  cont.appendChild(mapDiv);
 
-  const camera=new THREE.PerspectiveCamera(45,W/H,1,2000);
-  camera.position.set(0,170,210);camera.lookAt(0,0,0);
-
-  const renderer=new THREE.WebGLRenderer({antialias:true});
-  renderer.setSize(W,H);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
-  renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
-  cont.appendChild(renderer.domElement);
-
-  // ── DOM OVERLAYS ─────────────────────────────────────────────────────────
-  const compassCv=document.createElement('canvas');
-  compassCv.width=54;compassCv.height=54;
-  compassCv.style.cssText='position:absolute;bottom:36px;right:10px;pointer-events:none;z-index:12';
-  cont.appendChild(compassCv);
-
-  const scaleWrap=document.createElement('div');
-  scaleWrap.style.cssText='position:absolute;bottom:30px;left:10px;pointer-events:none;z-index:12';
-  scaleWrap.innerHTML='<div id="sbar" style="height:3px;background:#555;border-left:2px solid #555;border-right:2px solid #555;margin-bottom:2px;width:80px"></div><div id="sbar-lbl" style="font-size:8px;color:#555;text-align:center">100 m</div>';
-  cont.appendChild(scaleWrap);
-
-  const tip=document.createElement('div');
-  tip.style.cssText='position:absolute;display:none;background:rgba(255,255,255,0.95);border:1px solid #ccc;border-radius:4px;padding:5px 9px;font-size:10px;color:#222;pointer-events:none;z-index:20;box-shadow:0 2px 8px #0003;line-height:1.6';
-  cont.appendChild(tip);
-
-  // ── LUCES ────────────────────────────────────────────────────────────────
-  scene.add(new THREE.AmbientLight(0x9ab0c8,0.9));
-  const sunLight=new THREE.DirectionalLight(0xfff5dd,1.4);
-  sunLight.castShadow=true;
-  sunLight.shadow.mapSize.width=1024;sunLight.shadow.mapSize.height=1024;
-  sunLight.shadow.camera.near=10;sunLight.shadow.camera.far=800;
-  sunLight.shadow.camera.left=-180;sunLight.shadow.camera.right=180;
-  sunLight.shadow.camera.top=180;sunLight.shadow.camera.bottom=-180;
-  sunLight.shadow.bias=-0.001;
-  scene.add(sunLight);
-  const sunSphere=new THREE.Mesh(new THREE.SphereGeometry(8,12,12),new THREE.MeshBasicMaterial({color:0xfff5aa}));
-  scene.add(sunSphere);
-
-  // ── SUELO ────────────────────────────────────────────────────────────────
-  const gnd=new THREE.Mesh(new THREE.PlaneGeometry(1400,1400),new THREE.MeshLambertMaterial({color:0xc8c2b4}));
-  gnd.rotation.x=-Math.PI/2;gnd.receiveShadow=true;scene.add(gnd);
-
-  // ── CÍRCULO DE ANÁLISIS 150m ─────────────────────────────────────────────
-  {
-    const pts=[];
-    for(let i=0;i<=128;i++){const a=(i/128)*Math.PI*2;pts.push(new THREE.Vector3(Math.cos(a)*150,0.4,Math.sin(a)*150));}
-    const cl=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineDashedMaterial({color:0xc8900a,dashSize:8,gapSize:5}));
-    cl.computeLineDistances();scene.add(cl);
-    const rlbl=document.createElement('div');
-    rlbl.style.cssText='position:absolute;font-size:8px;color:#c8900a;font-weight:700;pointer-events:none;z-index:15;background:rgba(255,255,255,0.85);padding:1px 4px;border-radius:2px;transform:translate(-50%,-50%)';
-    rlbl.textContent='r = 150 m';rlbl.dataset.wx=150;rlbl.dataset.wy=2;rlbl.dataset.wz=0;
-    cont.appendChild(rlbl);_3d._extraLabels=[rlbl];
-  }
-
-  // ── VEGETACIÓN ───────────────────────────────────────────────────────────
-  vegetation.forEach(v=>{
-    try{
-      const shape=new THREE.Shape();
-      shape.moveTo(v.pts[0].x,v.pts[0].z);v.pts.slice(1).forEach(p=>shape.lineTo(p.x,p.z));shape.closePath();
-      const geo=new THREE.ExtrudeGeometry(shape,{depth:0.5,bevelEnabled:false});geo.rotateX(-Math.PI/2);
-      scene.add(new THREE.Mesh(geo,new THREE.MeshLambertMaterial({color:0x8dc86a,transparent:true,opacity:0.85})));
-    }catch(e){}
+  const map=new maplibregl.Map({
+    container:mapDiv,
+    style:'https://tiles.openfreemap.org/styles/liberty',
+    center:[lon,lat],
+    zoom:17,
+    pitch:52,
+    bearing:-20,
+    antialias:true,
+    attributionControl:false
   });
 
-  // ── CALLES ───────────────────────────────────────────────────────────────
-  const hwMeta={
-    motorway:    {w:9, col:0x9e9a8c},
-    trunk:       {w:9, col:0x9e9a8c},
-    primary:     {w:8, col:0xb0ac9c},
-    secondary:   {w:7, col:0xbcb8a8},
-    tertiary:    {w:6, col:0xc8c4b4},
-    residential: {w:5, col:0xd4d0c0},
-    unclassified:{w:5, col:0xd4d0c0},
-    living_street:{w:4,col:0xdad6c8},
-  };
-  const roadMat={};
-  streets.forEach(s=>{
-    try{
-      const meta=hwMeta[s.type];
-      if(!meta)return; // ignorar tipos no listados
-      const{w,col}=meta;
-      if(!roadMat[col])roadMat[col]=new THREE.MeshLambertMaterial({color:col});
-      const mat=roadMat[col];
-      // Renderizar cada segmento como caja plana, skip si midpoint está en edificio
-      for(let i=0;i<s.pts.length-1;i++){
-        const a=s.pts[i],b=s.pts[i+1];
-        const dx=b.x-a.x,dz=b.z-a.z;
-        const len=Math.sqrt(dx*dx+dz*dz);
-        if(len<0.3)continue;
-        const mx=(a.x+b.x)/2,mz=(a.z+b.z)/2;
-        // No renderizar si el centro del segmento cae dentro de un edificio
-        if(buildings.some(bld=>ptInPoly(mx,mz,bld.pts)))continue;
-        const geo=new THREE.BoxGeometry(w,0.18,len);
-        const mesh=new THREE.Mesh(geo,mat);
-        mesh.position.set(mx,0.09,mz);
-        mesh.rotation.y=Math.atan2(dx,dz);
-        mesh.receiveShadow=true;
-        scene.add(mesh);
+  map.addControl(new maplibregl.AttributionControl({compact:true}));
+  map.addControl(new maplibregl.NavigationControl({showCompass:true}),'bottom-right');
+  map.addControl(new maplibregl.ScaleControl({unit:'metric',maxWidth:90}),'bottom-left');
+
+  // Marcador del lote
+  new maplibregl.Marker({color:'#c8900a',scale:0.9})
+    .setLngLat([lon,lat])
+    .setPopup(new maplibregl.Popup({offset:25}).setText(name||'Lote de análisis'))
+    .addTo(map);
+
+  _3d.map=map; _3d.lat=lat;
+
+  map.on('load',()=>{
+    // Colorear edificios 3D si el estilo los incluye
+    map.getStyle().layers.forEach(layer=>{
+      if(layer.type==='fill-extrusion'&&(layer['source-layer']==='building'||layer.id.includes('building'))){
+        map.setPaintProperty(layer.id,'fill-extrusion-color',[
+          'interpolate',['linear'],['coalesce',['get','render_height'],['get','height'],5],
+          0,'#a8c4d8', 10,'#8aaac8', 30,'#6a8cb0', 60,'#4a6c90'
+        ]);
+        map.setPaintProperty(layer.id,'fill-extrusion-opacity',0.9);
       }
-      // Nombre pintado en el suelo como textura 3D alineada con la calle
-      if(s.name && s.pts.length>=2){
-        const mid=Math.floor(s.pts.length/2);
-        const pa=s.pts[Math.max(0,mid-1)], pb=s.pts[mid];
-        const segDx=pb.x-pa.x, segDz=pb.z-pa.z;
-        const segLen=Math.sqrt(segDx*segDx+segDz*segDz);
-        if(segLen>0.5){
-          const roadAngle=Math.atan2(segDx,segDz);
-          const mx2=(pa.x+pb.x)/2, mz2=(pa.z+pb.z)/2;
-          // Canvas con el texto
-          const tc=document.createElement('canvas');
-          tc.height=32;
-          const tctx=tc.getContext('2d');
-          tctx.font='bold 15px Arial,sans-serif';
-          const tw=tctx.measureText(s.name).width;
-          tc.width=Math.ceil(tw)+18;
-          tctx.font='bold 15px Arial,sans-serif';
-          tctx.fillStyle='rgba(44,40,28,0.92)';
-          tctx.fillText(s.name,9,22);
-          const tex=new THREE.CanvasTexture(tc);
-          tex.needsUpdate=true;
-          const aspect=tc.width/32;
-          const grp=new THREE.Group();
-          grp.position.set(mx2,0.22,mz2);
-          grp.rotation.y=roadAngle;
-          const pln=new THREE.Mesh(
-            new THREE.PlaneGeometry(aspect*5,5),
-            new THREE.MeshBasicMaterial({map:tex,transparent:true,depthWrite:false,side:THREE.DoubleSide})
-          );
-          pln.rotation.x=-Math.PI/2;
-          grp.add(pln); scene.add(grp);
-        }
-      }
-    }catch(e){}
-  });
-
-  // ── EDIFICIOS ────────────────────────────────────────────────────────────
-  const COLS=[0x8aaac8,0x6a8cb0,0x9ab4cc,0x7898b8,0x5a7ca0,0x8aa4c0,0x6890b4];
-  const buildingMeshes=[];
-  const bldgData=buildings.length>0?buildings:
-    [{pts:[{x:0,z:0},{x:28,z:0},{x:28,z:18},{x:0,z:18}],height:8,tags:{building:'yes'}},
-     {pts:[{x:32,z:0},{x:54,z:0},{x:54,z:18},{x:32,z:18}],height:14,tags:{building:'yes'}},
-     {pts:[{x:-30,z:5},{x:-6,z:5},{x:-6,z:21},{x:-30,z:21}],height:10,tags:{building:'yes'}},
-     {pts:[{x:5,z:22},{x:25,z:22},{x:25,z:37},{x:5,z:37}],height:12,tags:{building:'yes'}},
-     {pts:[{x:-28,z:24},{x:-8,z:24},{x:-8,z:40},{x:-28,z:40}],height:7,tags:{building:'yes'}}];
-
-  bldgData.forEach((b,i)=>{
-    try{
-      const shape=new THREE.Shape();
-      shape.moveTo(b.pts[0].x,b.pts[0].z);b.pts.slice(1).forEach(p=>shape.lineTo(p.x,p.z));shape.closePath();
-      const geo=new THREE.ExtrudeGeometry(shape,{depth:b.height,bevelEnabled:false});geo.rotateX(-Math.PI/2);
-      const mesh=new THREE.Mesh(geo,new THREE.MeshLambertMaterial({color:COLS[i%COLS.length]}));
-      mesh.castShadow=true;mesh.receiveShadow=true;
-      const tr=b.tags.building||'edificio';
-      mesh.userData={height:b.height,levels:b.tags['building:levels']||null,type:tr==='yes'?'Edificio':tr};
-      scene.add(mesh);buildingMeshes.push(mesh);
-      scene.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo),new THREE.LineBasicMaterial({color:0x405878})));
-    }catch(e){}
-  });
-
-  // ── ETIQUETAS DE ALTURA (top 5) ──────────────────────────────────────────
-  const heightLabels=[];
-  [...bldgData].sort((a,b)=>b.height-a.height).slice(0,5).forEach(b=>{
-    const bx=b.pts.reduce((s,p)=>s+p.x,0)/b.pts.length;
-    const bz=b.pts.reduce((s,p)=>s+p.z,0)/b.pts.length;
-    const lbl=document.createElement('div');
-    lbl.style.cssText='position:absolute;font-size:8px;color:#1a3860;font-weight:700;pointer-events:none;z-index:15;white-space:nowrap;background:rgba(255,255,255,0.88);padding:1px 4px;border-radius:2px;border:1px solid #8aaac866;transform:translate(-50%,-50%)';
-    lbl.textContent=`${Math.round(b.height)} m`;lbl.dataset.wx=bx;lbl.dataset.wy=b.height+4;lbl.dataset.wz=bz;
-    cont.appendChild(lbl);heightLabels.push(lbl);
-  });
-
-  // ── MARCADOR CENTRAL ─────────────────────────────────────────────────────
-  const mk=new THREE.Mesh(new THREE.CylinderGeometry(1.5,1.5,40,8),new THREE.MeshBasicMaterial({color:0xc8900a}));
-  mk.position.set(0,20,0);scene.add(mk);
-
-  // ── CONTROLS ─────────────────────────────────────────────────────────────
-  const controls=new THREE.OrbitControls(camera,renderer.domElement);
-  controls.enableDamping=true;controls.dampingFactor=0.07;
-  controls.minDistance=40;controls.maxDistance=700;
-  controls.maxPolarAngle=Math.PI/2.05;controls.target.set(0,8,0);
-
-  // ── RAYCASTER – TOOLTIP ──────────────────────────────────────────────────
-  const raycaster=new THREE.Raycaster();const mouse=new THREE.Vector2();
-  renderer.domElement.addEventListener('mousemove',e=>{
-    const rect=renderer.domElement.getBoundingClientRect();
-    mouse.x=((e.clientX-rect.left)/rect.width)*2-1;
-    mouse.y=-((e.clientY-rect.top)/rect.height)*2+1;
-    raycaster.setFromCamera(mouse,camera);
-    const hits=raycaster.intersectObjects(buildingMeshes);
-    if(hits.length){
-      const ud=hits[0].object.userData;
-      tip.style.display='block';
-      tip.style.left=(e.clientX-cont.getBoundingClientRect().left+14)+'px';
-      tip.style.top=(e.clientY-cont.getBoundingClientRect().top-10)+'px';
-      tip.innerHTML=`<b>${ud.type}</b><br>Altura: ~${Math.round(ud.height)} m${ud.levels?`<br>Pisos: ${ud.levels}`:''}`;
-    }else tip.style.display='none';
-  });
-  renderer.domElement.addEventListener('mouseleave',()=>{tip.style.display='none';});
-
-  // ── BRÚJULA ──────────────────────────────────────────────────────────────
-  function drawCompass(az){
-    const ctx=compassCv.getContext('2d'),cc=27,R=22;
-    ctx.clearRect(0,0,54,54);
-    ctx.fillStyle='rgba(255,255,255,0.88)';ctx.beginPath();ctx.arc(cc,cc,R,0,Math.PI*2);ctx.fill();
-    ctx.strokeStyle='#ccc';ctx.lineWidth=0.8;ctx.beginPath();ctx.arc(cc,cc,R,0,Math.PI*2);ctx.stroke();
-    for(let i=0;i<8;i++){const a=az+toRad(i*45);ctx.strokeStyle='#bbb';ctx.lineWidth=0.6;ctx.beginPath();ctx.moveTo(cc+Math.sin(a)*(R-5),cc-Math.cos(a)*(R-5));ctx.lineTo(cc+Math.sin(a)*R,cc-Math.cos(a)*R);ctx.stroke();}
-    ctx.save();ctx.translate(cc,cc);ctx.rotate(az);
-    ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(-5,-(R-7));ctx.lineTo(0,-(R-2));ctx.lineTo(5,-(R-7));ctx.fillStyle='#c82020';ctx.fill();
-    ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(-5,R-7);ctx.lineTo(0,R-2);ctx.lineTo(5,R-7);ctx.fillStyle='#aaa';ctx.fill();
-    ctx.restore();
-    ctx.fillStyle='#c82020';ctx.font='bold 8px sans-serif';ctx.textAlign='center';ctx.fillText('N',cc,11);
-  }
-
-  // ── BARRA DE ESCALA ───────────────────────────────────────────────────────
-  function updateScaleBar(){
-    const p1=new THREE.Vector3(-50,0,0).project(camera);
-    const p2=new THREE.Vector3(50,0,0).project(camera);
-    const px=Math.min(150,Math.max(20,Math.abs(p2.x-p1.x)/2*W));
-    const el=document.getElementById('sbar');if(el)el.style.width=px+'px';
-  }
-
-  // ── PROYECCIÓN DOM LABELS ────────────────────────────────────────────────
-  const allLabels=[...heightLabels,...(_3d._extraLabels||[])];
-  function updateLabels(){
-    allLabels.forEach(lbl=>{
-      const v=new THREE.Vector3(+lbl.dataset.wx,+lbl.dataset.wy,+lbl.dataset.wz).project(camera);
-      if(v.z>1){lbl.style.display='none';return;}
-      const sx=((v.x+1)/2)*W,sy=((-v.y+1)/2)*H;
-      if(sx<0||sx>W||sy<0||sy>H){lbl.style.display='none';return;}
-      lbl.style.display='block';lbl.style.left=sx+'px';lbl.style.top=sy+'px';
     });
-  }
 
-  // ── GUARDAR REFS ─────────────────────────────────────────────────────────
-  _3d.renderer=renderer;_3d.sunLight=sunLight;_3d.sunSphere=sunSphere;_3d.lat=lat;_3d.scene=scene;
-  document.getElementById('sun-controls').style.display='flex';
-  updateSun();
+    // Círculo de análisis r=150m
+    const mPerLon=111320*Math.cos(toRad(lat)), mPerLat=110540;
+    const ring=[];
+    for(let i=0;i<=72;i++){
+      const a=(i/72)*Math.PI*2;
+      ring.push([lon+Math.cos(a)*150/mPerLon, lat+Math.sin(a)*150/mPerLat]);
+    }
+    map.addSource('analysis',{type:'geojson',data:{type:'FeatureCollection',features:[
+      {type:'Feature',geometry:{type:'LineString',coordinates:ring}},
+      {type:'Feature',geometry:{type:'Point',coordinates:[lon+150/mPerLon,lat]},properties:{t:'r = 150 m'}}
+    ]}});
+    map.addLayer({id:'circle-line',type:'line',source:'analysis',
+      filter:['==','$type','LineString'],
+      paint:{'line-color':'#c8900a','line-width':1.8,'line-dasharray':[5,4],'line-opacity':0.9}});
+    map.addLayer({id:'circle-lbl',type:'symbol',source:'analysis',
+      filter:['==','$type','Point'],
+      layout:{'text-field':['get','t'],'text-size':10,'text-anchor':'left','text-offset':[0.5,0]},
+      paint:{'text-color':'#c8900a','text-halo-color':'rgba(255,255,255,0.95)','text-halo-width':2}});
 
-  // ── LOOP ─────────────────────────────────────────────────────────────────
-  function animate(){
-    _3d.animId=requestAnimationFrame(animate);controls.update();
-    drawCompass(Math.atan2(camera.position.x-controls.target.x,camera.position.z-controls.target.z));
-    updateScaleBar();updateLabels();
-    renderer.render(scene,camera);
-  }
-  animate();
+    // Iluminación solar inicial
+    updateSun();
+    document.getElementById('sun-controls').style.display='flex';
+  });
 }
 
 function drawWindRose(mdata){
@@ -966,8 +675,7 @@ async function generate(){
   const mdata=processDaily(raw);
   if(mdata){
     const wdAll=mdata.map(m=>m.wd).filter(v=>v!=null);
-    const domWd=avg(wdAll);
-    if(domWd!=null)addWindArrow3D(domWd);
+    const domWd=avg(wdAll); // eslint-disable-line no-unused-vars
   }
   renderAll(lat,mdata);
   drawWindRose(mdata);

@@ -6,84 +6,173 @@
 <title>Generador — Situación Actual</title>
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4/dist/maplibre-gl.css">
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:#f2f0eb;color:#1a1820;font-family:sans-serif;padding:16px}
-.top-bar{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
-.top-bar input{background:#fff;border:1px solid #ccc;color:#1a1820;padding:7px 10px;border-radius:6px;font-size:13px}
+:root{
+  --bg:#f0ede8;
+  --surface:#ffffff;
+  --border:#e4dfd8;
+  --border-md:#d0c9c0;
+  --text:#1c1917;
+  --text-2:#6b6560;
+  --text-3:#a09a94;
+  --amber:#b5790a;
+  --amber-light:#fdf3dc;
+  --amber-dark:#7c5207;
+  --blue:#1d5fa8;
+  --blue-light:#e8f1fb;
+  --teal:#0a8272;
+  --teal-light:#e0f5f2;
+  --red:#b82020;
+  --red-light:#fdeaea;
+  --orange:#c05018;
+  --orange-light:#fdf0e8;
+  --green:#1a7a38;
+  --green-light:#e6f5ec;
+  --shadow-sm:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+  --shadow-md:0 4px 12px rgba(0,0,0,.08),0 2px 4px rgba(0,0,0,.04);
+  --radius:10px;
+  --radius-sm:6px;
+}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;padding:16px;font-size:13px;line-height:1.5}
+
+/* ── Top bar ─────────────────────────────────────── */
+.top-bar{display:flex;align-items:center;gap:8px;margin-bottom:18px;flex-wrap:wrap}
+.top-bar input{background:var(--surface);border:1.5px solid var(--border);color:var(--text);padding:7px 11px;border-radius:var(--radius-sm);font-size:13px;font-family:inherit;outline:none;transition:border-color .15s}
+.top-bar input:focus{border-color:var(--amber)}
 .top-bar input[type=number]{width:130px}
-.top-bar input[type=text]{width:200px}
-.top-bar button{background:#c8900a;color:#fff;border:none;padding:8px 20px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer}
-.top-bar button:hover{background:#e0a010}
-.status{font-size:12px;color:#888}
-h1{font-size:18px;font-weight:700;color:#1a1820;letter-spacing:.5px;margin-bottom:3px}
-.subtitle{font-size:11px;color:#888;margin-bottom:10px}
-.sep{height:1px;background:#c8900a55;margin-bottom:10px}
-/* Info bar */
-.info-bar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
-.info-pill{background:#fff;border:0.5px solid #ddd8d0;border-radius:6px;padding:5px 10px;display:flex;flex-direction:column;min-width:110px;flex:1}
-.ip-lbl{font-size:8px;font-weight:700;color:#c8900a;letter-spacing:.7px;margin-bottom:2px}
-.ip-val{font-size:11px;font-weight:600;color:#1a1820;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-/* Current conditions */
-.curr-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:6px;margin-bottom:10px}
-.curr-card{background:#fff;border:0.5px solid #ddd8d0;border-radius:8px;padding:8px 10px;text-align:center}
-.curr-val{font-size:17px;font-weight:700;margin-bottom:2px;line-height:1.1}
-.curr-lbl{font-size:9px;color:#999;text-transform:uppercase;letter-spacing:.4px}
-.curr-sub{font-size:9px;color:#bbb;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-/* Main grid */
-.main-grid{display:grid;grid-template-columns:200px 1fr 230px;gap:8px}
-.panel{background:#fff;border:0.5px solid #ddd8d0;border-radius:8px;padding:10px}
-.panel-title{font-size:10px;font-weight:700;color:#c8900a;margin-bottom:8px;letter-spacing:.8px}
-.clima-row{background:#f7f5f1;border-radius:4px;padding:5px 8px;margin-bottom:4px}
-.clima-row .val{font-size:12px;font-weight:700}
-.clima-row .lbl{font-size:10px;color:#999;margin-top:1px}
-.cards-row{grid-column:2/-1;display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
-.card{background:#fff;border-radius:8px;overflow:hidden;border:0.5px solid #ddd8d0}
-.card-head{padding:6px 8px;font-size:10px;font-weight:700;text-align:center;color:#fff}
-.card-body{padding:6px 8px}
-.card-row{display:flex;justify-content:space-between;align-items:center;background:#f7f5f1;border-radius:3px;padding:4px 6px;margin-bottom:3px}
-.card-row .k{font-size:10px;color:#999}
-.card-row .v{font-size:11px;font-weight:700}
+.top-bar input[type=text]{width:210px}
+.btn{background:var(--amber);color:#fff;border:none;padding:8px 18px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s,transform .1s;white-space:nowrap}
+.btn:hover{background:var(--amber-dark)}
+.btn:active{transform:scale(.97)}
+.btn-ghost{background:transparent;color:var(--amber);border:1.5px solid var(--amber)}
+.btn-ghost:hover{background:var(--amber-light)}
+.btn-blue{background:var(--blue)}
+.btn-blue:hover{background:#174e8e}
+.status{font-size:12px;color:var(--text-3);margin-left:auto;font-weight:500}
+
+/* ── Page header ─────────────────────────────────── */
+.page-header{display:flex;align-items:baseline;gap:12px;margin-bottom:14px}
+.page-header h1{font-size:20px;font-weight:700;letter-spacing:-.3px;color:var(--text)}
+.page-header .subtitle{font-size:12px;color:var(--text-3);font-weight:400}
+.sep{height:1.5px;background:linear-gradient(90deg,var(--amber) 0%,transparent 60%);border-radius:2px;margin-bottom:14px;opacity:.5}
+
+/* ── Info bar ────────────────────────────────────── */
+.info-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.info-pill{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:8px 12px;display:flex;flex-direction:column;min-width:120px;flex:1;box-shadow:var(--shadow-sm)}
+.ip-lbl{font-size:9px;font-weight:700;color:var(--amber);letter-spacing:.9px;margin-bottom:3px;text-transform:uppercase}
+.ip-val{font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ── Current conditions ──────────────────────────── */
+.curr-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin-bottom:12px}
+.curr-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:12px 10px;text-align:center;box-shadow:var(--shadow-sm);transition:box-shadow .15s}
+.curr-card:hover{box-shadow:var(--shadow-md)}
+.curr-icon{font-size:18px;margin-bottom:4px;line-height:1}
+.curr-val{font-size:18px;font-weight:700;margin-bottom:2px;line-height:1.15;letter-spacing:-.5px}
+.curr-lbl{font-size:9px;color:var(--text-3);text-transform:uppercase;letter-spacing:.6px;font-weight:600}
+.curr-sub{font-size:10px;color:var(--text-2);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ── Main grid ───────────────────────────────────── */
+.main-grid{display:grid;grid-template-columns:210px 1fr 240px;gap:10px}
+.panel{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow-sm)}
+.panel-title{font-size:10px;font-weight:700;color:var(--text-2);margin-bottom:10px;letter-spacing:.9px;text-transform:uppercase;display:flex;align-items:center;gap:5px}
+.panel-title .pt-badge{font-size:8px;font-weight:500;color:var(--text-3);text-transform:none;letter-spacing:0;padding:1px 5px;background:var(--bg);border-radius:10px}
 .clima-panel{grid-column:1/2;grid-row:2/3}
 .iso-panel{grid-column:2/3;grid-row:2/3;display:flex;flex-direction:column}
-.side-panels{grid-column:3/4;grid-row:2/3;display:grid;grid-template-rows:1fr 1fr;gap:8px}
-/* Bottom grid */
-.bottom-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px}
-/* Map */
-#iso-canvas{position:relative;overflow:hidden;border-radius:4px;flex:1;min-height:300px}
+.side-panels{grid-column:3/4;grid-row:2/3;display:grid;grid-template-rows:auto 1fr;gap:10px}
+.cards-row{grid-column:2/-1;display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+
+/* ── Stat cards (4 top cards) ────────────────────── */
+.card{background:var(--surface);border-radius:var(--radius);overflow:hidden;border:1.5px solid var(--border);box-shadow:var(--shadow-sm)}
+.card-head{padding:8px 12px;font-size:9px;font-weight:700;text-align:center;color:#fff;letter-spacing:.8px;text-transform:uppercase}
+.card-body{padding:8px 10px}
+.card-row{display:flex;justify-content:space-between;align-items:center;border-radius:4px;padding:4px 6px;margin-bottom:2px}
+.card-row:nth-child(odd){background:var(--bg)}
+.card-row .k{font-size:10px;color:var(--text-2);font-weight:400}
+.card-row .v{font-size:11px;font-weight:700}
+
+/* ── Clima panel rows ────────────────────────────── */
+.clima-stat{display:flex;flex-direction:column;padding:6px 8px;border-radius:6px;margin-bottom:4px}
+.clima-stat:nth-child(odd){background:var(--bg)}
+.clima-stat .cs-val{font-size:13px;font-weight:700;line-height:1.2}
+.clima-stat .cs-lbl{font-size:9px;color:var(--text-3);margin-top:1px}
+
+/* ── Bar chart ───────────────────────────────────── */
+.bar-chart{margin-top:10px}
+.bar-chart-title{font-size:9px;color:var(--text-3);font-weight:600;margin-bottom:5px;letter-spacing:.4px}
+.bar-row{display:flex;align-items:center;gap:5px;margin-bottom:3px}
+.bar-label{font-size:9px;color:var(--text-3);width:22px;text-align:right;flex-shrink:0}
+.bar-track{flex:1;background:var(--bg);border-radius:3px;height:8px;position:relative;overflow:hidden}
+.bar-max{position:absolute;top:0;left:0;height:8px;border-radius:3px;background:var(--red);opacity:.55}
+.bar-min{position:absolute;top:0;left:0;height:8px;border-radius:3px;background:var(--blue);opacity:.55}
+.bar-val{font-size:9px;color:var(--text-3);width:40px;flex-shrink:0;text-align:right}
+
+/* ── Map ─────────────────────────────────────────── */
+#iso-canvas{position:relative;overflow:hidden;border-radius:6px;flex:1;min-height:300px}
 #iso-canvas canvas{display:block}
-.iso-hint{position:absolute;bottom:6px;right:8px;font-size:9px;color:#bbb;pointer-events:none}
-/* Diagrams */
-.diag-title{font-size:10px;font-weight:700;color:#c8900a;text-align:center;margin-bottom:6px}
-.mini-legend{display:flex;gap:10px;justify-content:center;margin-top:4px;flex-wrap:wrap}
-.mini-legend span{font-size:10px;color:#888;display:flex;align-items:center;gap:4px}
-.dot{width:8px;height:8px;border-radius:50%;display:inline-block}
-/* Bars */
-.bar-chart{margin-top:8px}
-.bar-row{display:flex;align-items:center;gap:4px;margin-bottom:3px}
-.bar-label{font-size:9px;color:#999;width:22px;text-align:right}
-.bar-track{flex:1;background:#ede9e2;border-radius:2px;height:10px;position:relative}
-.bar-max{position:absolute;top:0;left:0;height:10px;border-radius:2px;background:#c8202088}
-.bar-min{position:absolute;top:0;left:0;height:10px;border-radius:2px;background:#1a6db088}
-.bar-val{font-size:9px;color:#999;width:36px}
-/* Footer */
-.footer{margin-top:12px;padding-top:8px;border-top:0.5px solid #ddd;font-size:10px;color:#aaa;display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px}
-/* Seismic panel */
-.seis-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:8px}
-.seis-stat{background:#f7f5f1;border-radius:5px;padding:5px 4px;text-align:center}
-.seis-stat .sv{font-size:20px;font-weight:700;line-height:1}
-.seis-stat .sl{font-size:8px;color:#aaa;letter-spacing:.4px;margin-top:2px}
+.iso-hint{position:absolute;bottom:6px;right:8px;font-size:9px;color:rgba(255,255,255,.5);pointer-events:none;text-shadow:0 1px 2px rgba(0,0,0,.4)}
+.sun-controls{display:none;padding:8px 4px 0;gap:8px;align-items:center}
+.sun-controls span{font-size:9px;font-weight:700;white-space:nowrap;color:var(--amber)}
+.sun-controls select{background:var(--surface);color:var(--text);border:1.5px solid var(--border);border-radius:4px;font-size:10px;padding:2px 5px;font-family:inherit}
+
+/* ── Bottom grid ─────────────────────────────────── */
+.bottom-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:10px}
+.diag-title{font-size:10px;font-weight:700;color:var(--text-2);text-align:center;margin-bottom:8px;letter-spacing:.7px;text-transform:uppercase}
+.mini-legend{display:flex;gap:10px;justify-content:center;margin-top:6px;flex-wrap:wrap}
+.mini-legend span{font-size:10px;color:var(--text-2);display:flex;align-items:center;gap:4px}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0}
+
+/* ── AQI panel ───────────────────────────────────── */
+.aqi-score{text-align:center;padding:8px 0 10px}
+.aqi-num{font-size:36px;font-weight:700;line-height:1;letter-spacing:-1px}
+.aqi-lbl{font-size:12px;font-weight:600;margin-top:2px}
+.aqi-sub{font-size:9px;color:var(--text-3);margin-top:1px}
+.pollutant-row{margin-bottom:6px}
+.pollutant-header{display:flex;justify-content:space-between;font-size:10px;color:var(--text-2);margin-bottom:3px}
+.pollutant-bar{background:var(--bg);border-radius:3px;height:5px;overflow:hidden}
+.pollutant-fill{height:5px;border-radius:3px}
+
+/* ── Seismic panel ───────────────────────────────── */
+.seis-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px}
+.seis-stat{background:var(--bg);border-radius:6px;padding:8px 4px;text-align:center}
+.seis-stat .sv{font-size:20px;font-weight:700;line-height:1;letter-spacing:-1px}
+.seis-stat .sl{font-size:8px;color:var(--text-3);letter-spacing:.5px;margin-top:3px;font-weight:600;text-transform:uppercase}
+.seis-section-title{font-size:9px;font-weight:700;color:var(--text-3);letter-spacing:.6px;margin:8px 0 5px;text-transform:uppercase}
 .seis-bin{display:flex;align-items:center;gap:5px;margin-bottom:3px}
-.seis-bin-lbl{font-size:9px;color:#888;width:30px;flex-shrink:0}
-.seis-bin-track{flex:1;background:#ede9e2;border-radius:2px;height:8px}
-.seis-bin-fill{height:8px;border-radius:2px}
+.seis-bin-lbl{font-size:9px;color:var(--text-2);width:30px;flex-shrink:0;font-weight:500}
+.seis-bin-track{flex:1;background:var(--bg);border-radius:3px;height:7px;overflow:hidden}
+.seis-bin-fill{height:7px;border-radius:3px}
 .seis-bin-n{font-size:9px;font-weight:700;width:24px;text-align:right;flex-shrink:0}
-.seis-event{display:flex;align-items:center;gap:5px;background:#f7f5f1;border-radius:4px;padding:4px 6px;margin-bottom:3px}
-.seis-mag{font-size:13px;font-weight:700;flex-shrink:0;width:32px}
-.seis-place{font-size:9px;color:#555;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.seis-meta{font-size:8px;color:#bbb;flex-shrink:0;text-align:right;line-height:1.4}
-/* Responsive */
+.seis-event{display:flex;align-items:center;gap:6px;background:var(--bg);border-radius:6px;padding:5px 7px;margin-bottom:4px;border:1px solid var(--border)}
+.seis-mag-badge{font-size:11px;font-weight:700;flex-shrink:0;width:34px;padding:2px 0;text-align:center;border-radius:4px;line-height:1.2}
+.seis-place{font-size:9px;color:var(--text-2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.seis-meta{font-size:8px;color:var(--text-3);flex-shrink:0;text-align:right;line-height:1.5}
+
+/* ── Forecast ────────────────────────────────────── */
+.forecast-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-top:4px}
+.fc-day{text-align:center;padding:2px}
+.fc-dow{font-size:9px;font-weight:700;color:var(--text-2)}
+.fc-date{font-size:8px;color:var(--text-3);margin-bottom:2px}
+.fc-cond{font-size:8px;color:var(--text-2);margin:2px 0;white-space:nowrap;overflow:hidden}
+.fc-bar{height:60px;position:relative;margin:2px auto;width:14px}
+.fc-tmax{font-size:9px;font-weight:700;color:var(--red)}
+.fc-tmin{font-size:9px;color:var(--blue)}
+.fc-prec{font-size:8px;color:var(--blue);margin-top:1px}
+.fc-uv{font-size:8px;margin-top:1px}
+
+/* ── Amenities ───────────────────────────────────── */
+.amenity-group-title{font-size:9px;font-weight:700;letter-spacing:.5px;margin:7px 0 4px;text-transform:uppercase}
+.amenity-row{display:flex;justify-content:space-between;align-items:center;border-radius:4px;padding:4px 7px;margin-bottom:2px}
+.amenity-row:nth-child(odd){background:var(--bg)}
+.amenity-row .k{font-size:10px;color:var(--text-2)}
+.amenity-badge{font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;color:#fff}
+
+/* ── Footer ──────────────────────────────────────── */
+.footer{margin-top:14px;padding-top:10px;border-top:1.5px solid var(--border);font-size:10px;color:var(--text-3);display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px}
+
+/* ── Responsive ──────────────────────────────────── */
 @media(max-width:1100px){
-  .main-grid{grid-template-columns:180px 1fr!important}
+  .main-grid{grid-template-columns:190px 1fr!important}
   .side-panels{grid-column:1/-1;grid-row:auto;grid-template-rows:none;grid-template-columns:1fr 1fr}
   .cards-row{grid-template-columns:repeat(2,1fr)}
 }
@@ -102,17 +191,16 @@ h1{font-size:18px;font-weight:700;color:#1a1820;letter-spacing:.5px;margin-botto
   .bottom-grid{grid-template-columns:1fr}
   .curr-row{grid-template-columns:repeat(2,1fr)!important}
 }
-/* Print / PDF */
-.btn-pdf{background:#1a6db0;margin-left:auto}
-.btn-pdf:hover{background:#2a7dc0}
+
+/* ── Print / PDF ─────────────────────────────────── */
 @page{size:A3 landscape;margin:8mm}
 @media print{
   .top-bar,.no-print{display:none!important}
   body{padding:4px;background:#fff}
   *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .panel{break-inside:avoid}
-  .main-grid{grid-template-columns:200px 1fr 230px!important}
-  .side-panels{grid-column:3/4;grid-row:2/3;grid-template-columns:none;grid-template-rows:1fr 1fr}
+  .main-grid{grid-template-columns:210px 1fr 240px!important}
+  .side-panels{grid-column:3/4;grid-row:2/3;grid-template-columns:none;grid-template-rows:auto 1fr}
   .cards-row{grid-column:2/-1;grid-template-columns:repeat(4,1fr)}
   .bottom-grid{grid-template-columns:repeat(4,1fr)}
 }
@@ -124,47 +212,49 @@ h1{font-size:18px;font-weight:700;color:#1a1820;letter-spacing:.5px;margin-botto
   <input id="inp-lat" type="number" step="0.0001" placeholder="Latitud" value="-12.0456">
   <input id="inp-lon" type="number" step="0.0001" placeholder="Longitud" value="-77.0282">
   <input id="inp-name" type="text" placeholder="Nombre del lugar" value="C.H. La Muralla">
-  <button onclick="generate()">Generar análisis</button>
-  <button class="btn-pdf no-print" onclick="window.print()">Exportar PDF</button>
+  <button class="btn" onclick="generate()">Generar análisis</button>
+  <button class="btn btn-blue no-print" onclick="window.print()">Exportar PDF</button>
   <span class="status" id="status">Listo</span>
 </div>
 
-<h1>SITUACIÓN ACTUAL</h1>
-<p class="subtitle" id="subtitle">Ingresa coordenadas y presiona Generar</p>
+<div class="page-header">
+  <h1>SITUACIÓN ACTUAL</h1>
+  <span class="subtitle" id="subtitle">Ingresa coordenadas y presiona Generar análisis</span>
+</div>
 <div class="sep"></div>
 
 <div id="info-bar" class="info-bar">
-  <div style="color:#999;font-size:11px;padding:4px 0">Ingresa coordenadas y presiona Generar análisis</div>
+  <div style="color:var(--text-3);font-size:11px;padding:4px 0">Ingresa coordenadas y presiona Generar análisis</div>
 </div>
 
 <div id="current-row" class="curr-row" style="grid-template-columns:1fr">
-  <div style="background:#fff;border:0.5px solid #ddd8d0;border-radius:8px;padding:12px;color:#aaa;font-size:11px">
+  <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:14px;color:var(--text-3);font-size:12px">
     Las condiciones actuales aparecerán aquí
   </div>
 </div>
 
 <div class="main-grid">
   <div class="panel clima-panel" id="clima-panel">
-    <div class="panel-title">CLIMA HISTÓRICO <span style="font-weight:400;color:#bbb;font-size:9px">(30 años ERA5)</span></div>
-    <div id="clima-rows"><div style="color:#aaa;font-size:11px;padding:8px">Esperando datos...</div></div>
+    <div class="panel-title">Clima histórico <span class="pt-badge">ERA5 · 30 años</span></div>
+    <div id="clima-rows"><div style="color:var(--text-3);font-size:11px;padding:8px">Esperando datos...</div></div>
     <div class="bar-chart" id="bar-chart"></div>
   </div>
 
   <div class="cards-row" id="cards-row">
-    <div style="grid-column:1/-1;color:#aaa;font-size:11px;padding:8px">Presiona Generar análisis</div>
+    <div style="grid-column:1/-1;color:var(--text-3);font-size:12px;padding:8px">Presiona Generar análisis</div>
   </div>
 
   <div class="panel iso-panel" style="min-height:340px">
-    <div class="panel-title">EMPLAZAMIENTO — MAPA 3D</div>
-    <div id="iso-canvas" style="width:100%;flex:1;min-height:320px;position:relative;overflow:hidden;border-radius:4px">
-      <div style="color:#aaa;font-size:11px;padding:20px;text-align:center">Presiona Generar análisis</div>
+    <div class="panel-title">Emplazamiento <span class="pt-badge">Mapa 3D</span></div>
+    <div id="iso-canvas" style="width:100%;flex:1;min-height:320px;position:relative;overflow:hidden;border-radius:6px">
+      <div style="color:var(--text-3);font-size:12px;padding:20px;text-align:center">Presiona Generar análisis</div>
     </div>
-    <div id="sun-controls" style="display:none;padding:6px 4px 0;gap:8px;align-items:center">
-      <span style="font-size:9px;color:#e8b84b;font-weight:700;white-space:nowrap">☀ ASOLEAMIENTO</span>
+    <div id="sun-controls" class="sun-controls">
+      <span>☀ Asoleamiento</span>
       <input type="range" id="sun-hour" min="4" max="20" step="0.25" value="12"
-        style="flex:1;accent-color:#e8b84b;height:4px">
-      <span id="sun-hour-val" style="font-size:10px;color:#e8b84b;width:34px;text-align:right">12:00</span>
-      <select id="sun-doy" style="background:#1a1a2e;color:#ccc;border:1px solid #333;border-radius:4px;font-size:10px;padding:2px 4px">
+        style="flex:1;accent-color:var(--amber);height:4px">
+      <span id="sun-hour-val" style="font-size:10px;color:var(--amber);width:34px;text-align:right">12:00</span>
+      <select id="sun-doy">
         <option value="80">Equinoccio</option>
         <option value="355">21 Dic (verano)</option>
         <option value="172">21 Jun (invierno)</option>
@@ -175,24 +265,24 @@ h1{font-size:18px;font-weight:700;color:#1a1820;letter-spacing:.5px;margin-botto
 
   <div class="side-panels">
     <div class="panel" id="aqi-panel">
-      <div class="panel-title">CALIDAD DEL AIRE</div>
-      <div style="color:#aaa;font-size:11px">Esperando datos...</div>
+      <div class="panel-title">Calidad del aire</div>
+      <div style="color:var(--text-3);font-size:11px">Esperando datos...</div>
     </div>
     <div class="panel" id="seismic-panel">
-      <div class="panel-title">ACTIVIDAD SÍSMICA</div>
-      <div style="color:#aaa;font-size:11px">Esperando datos...</div>
+      <div class="panel-title">Actividad sísmica</div>
+      <div style="color:var(--text-3);font-size:11px">Esperando datos...</div>
     </div>
   </div>
 </div>
 
 <div class="bottom-grid">
   <div class="panel">
-    <div class="diag-title">ROSA DE VIENTOS</div>
+    <div class="diag-title">Rosa de vientos</div>
     <canvas id="wind-canvas" style="display:block"></canvas>
     <div id="wind-legend" class="mini-legend" style="margin-top:6px"></div>
   </div>
   <div class="panel">
-    <div class="diag-title">TRAYECTORIA SOLAR</div>
+    <div class="diag-title">Trayectoria solar</div>
     <canvas id="sun-canvas" style="display:block"></canvas>
     <div class="mini-legend" style="margin-top:6px">
       <span><span class="dot" style="background:#c84020"></span>21 Dic</span>
@@ -201,12 +291,12 @@ h1{font-size:18px;font-weight:700;color:#1a1820;letter-spacing:.5px;margin-botto
     </div>
   </div>
   <div class="panel" id="forecast-panel">
-    <div class="panel-title">PRONÓSTICO 7 DÍAS</div>
-    <div style="color:#aaa;font-size:11px">Esperando datos...</div>
+    <div class="panel-title">Pronóstico 7 días</div>
+    <div style="color:var(--text-3);font-size:11px">Esperando datos...</div>
   </div>
   <div class="panel" id="amenities-panel">
-    <div class="panel-title">ENTORNO URBANO <span id="amenities-radius" style="font-weight:400;color:#aaa"></span></div>
-    <div style="color:#aaa;font-size:11px">Esperando datos...</div>
+    <div class="panel-title">Entorno urbano <span class="pt-badge" id="amenities-radius"></span></div>
+    <div style="color:var(--text-3);font-size:11px">Esperando datos...</div>
   </div>
 </div>
 
@@ -217,17 +307,17 @@ h1{font-size:18px;font-weight:700;color:#1a1820;letter-spacing:.5px;margin-botto
 
 <script src="https://unpkg.com/maplibre-gl@4/dist/maplibre-gl.js"></script>
 <script>
-// ─── Colores ────────────────────────────────────────────────────────────────
-const ACCENT='#c8900a',ACCENT2='#1a6db0',ORANGE='#c84020',TEAL='#0a9080';
-const GREEN='#1a9040',RED='#c82020',GRAY='#888',LGRAY='#222';
-const PANEL='#ffffff';
+// ─── Colores ─────────────────────────────────────────────────────────────────
+const AMBER='#b5790a',BLUE='#1d5fa8',TEAL='#0a8272',RED='#b82020',ORANGE='#c05018';
+const GREEN='#1a7a38',GRAY='#6b6560',LGRAY='#444';
+const BG='#f0ede8',PANEL='#ffffff';
 
-// ─── Utilidades ─────────────────────────────────────────────────────────────
+// ─── Utilidades ──────────────────────────────────────────────────────────────
 const toRad=d=>d*Math.PI/180;
 const fmt=(n,d=1)=>isNaN(n)||n==null?'--':Number(n).toFixed(d);
 const avg=arr=>{const v=arr.filter(x=>x!=null&&!isNaN(x));return v.length?v.reduce((a,b)=>a+b,0)/v.length:null};
 
-// ─── Astronomía ─────────────────────────────────────────────────────────────
+// ─── Astronomía ──────────────────────────────────────────────────────────────
 function declination(doy){return 23.45*Math.sin(toRad(360*(doy-81)/365))}
 
 function sunriseHour(lat,doy){
@@ -262,11 +352,12 @@ function moonPhase(){
   const pct=age/29.53058867;
   const phaseIdx=Math.floor(pct*4)%4;
   const names=['Luna nueva','Cuarto creciente','Luna llena','Cuarto menguante'];
+  const icons=['🌑','🌓','🌕','🌗'];
   const illum=Math.round(50*(1-Math.cos(pct*2*Math.PI)));
-  return{age:Math.round(age),name:names[phaseIdx],illumination:illum};
+  return{age:Math.round(age),name:names[phaseIdx],icon:icons[phaseIdx],illumination:illum};
 }
 
-// ─── Helpers clima ───────────────────────────────────────────────────────────
+// ─── Helpers clima ────────────────────────────────────────────────────────────
 function windDirName(deg){
   const dirs=['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSO','SO','OSO','O','ONO','NO','NNO'];
   return dirs[Math.round(((deg%360)+360)%360/22.5)%16];
@@ -289,16 +380,22 @@ function wmoShort(code){
   if(code<=77)return'Nieve';if(code<=82)return'Chubascos';return'Tormenta';
 }
 
+function wmoIcon(code){
+  if(code===0)return'☀️';if(code<=2)return'🌤';if(code<=3)return'☁️';
+  if(code<=48)return'🌫';if(code<=55)return'🌦';if(code<=67)return'🌧';
+  if(code<=77)return'❄️';if(code<=82)return'⛈';return'🌩';
+}
+
 function uvLabel(v){return v==null?'--':v<3?'Bajo':v<6?'Moderado':v<8?'Alto':v<11?'Muy alto':'Extremo'}
-function uvColor(v){return v==null?GRAY:v<3?GREEN:v<6?ACCENT:v<8?ORANGE:RED}
+function uvColor(v){return v==null?GRAY:v<3?GREEN:v<6?AMBER:v<8?ORANGE:RED}
 
 function aqiLabel(a){
   if(a==null)return'--';if(a<20)return'Buena';if(a<40)return'Aceptable';
   if(a<60)return'Moderada';if(a<80)return'Mala';if(a<100)return'Muy mala';return'Peligrosa';
 }
 function aqiColor(a){
-  if(a==null||a<20)return GREEN;if(a<40)return'#70a040';
-  if(a<60)return ACCENT;if(a<80)return ORANGE;return RED;
+  if(a==null||a<20)return GREEN;if(a<40)return'#5a9a30';
+  if(a<60)return AMBER;if(a<80)return ORANGE;return RED;
 }
 
 function koppenClassify(months){
@@ -307,7 +404,7 @@ function koppenClassify(months){
   const prec=months.map(m=>m.prec||0);
   const tAnn=avg(tM),pAnn=prec.reduce((a,b)=>a+b,0);
   const tMinM=Math.min(...tM),tMaxM=Math.max(...tM);
-  const pThresh=20*tAnn+280; // simplified (year-round rain)
+  const pThresh=20*tAnn+280;
   if(pAnn<pThresh){
     const isDesert=pAnn<pThresh/2,isHot=tAnn>=18;
     return isDesert?{code:isHot?'BWh':'BWk',desc:isHot?'Desértico cálido':'Desértico frío'}
@@ -331,10 +428,9 @@ function koppenClassify(months){
   return{code:`C${sub}${tSub}`,desc:sub==='s'?'Mediterráneo':sub==='w'?'Templado invierno seco':hotSummer?'Subtropical húmedo':'Oceánico'};
 }
 
-// ─── APIs ────────────────────────────────────────────────────────────────────
+// ─── APIs ─────────────────────────────────────────────────────────────────────
 async function fetchClimate(lat,lon){
-  const setStatus=(t,c)=>{const s=document.getElementById('status');s.textContent=t;s.style.color=c};
-  setStatus('Consultando 30 años de datos ERA5...','#e8b84b');
+  const s=document.getElementById('status');s.textContent='Consultando 30 años ERA5...';s.style.color=AMBER;
   const today=new Date();
   const end=new Date(today);end.setDate(end.getDate()-1);
   const start=new Date(today);start.setFullYear(start.getFullYear()-30);
@@ -344,7 +440,7 @@ async function fetchClimate(lat,lon){
     `winddirection_10m_dominant,cloudcover_mean,sunshine_duration,relative_humidity_2m_mean`+
     `&timezone=auto&start_date=${d2(start)}&end_date=${d2(end)}`;
   try{const r=await fetch(url);if(!r.ok)throw new Error(`HTTP ${r.status}`);return await r.json();}
-  catch(e){setStatus(`⚠ ${e.message}`,RED);return null;}
+  catch(e){s.textContent=`⚠ ${e.message}`;s.style.color=RED;return null;}
 }
 
 async function fetchCurrent(lat,lon){
@@ -393,7 +489,7 @@ async function fetchIGP(lat,lon){
         return{mag:parseFloat(s.magnitud),place:s.referencia,time:new Date(s.fecha_hora),
                depth:s.profundidad,intensidad:s.intensidades,dist,codigo:s.codigo};
       })
-      .filter(s=>s.dist<=300); // sin filtro de magnitud mínima, sin límite de cantidad
+      .filter(s=>s.dist<=300);
   }catch(_){return[];}
 }
 
@@ -416,7 +512,7 @@ async function fetchAmenities(lat,lon){
   }catch(_){return[];}
 }
 
-// ─── Procesar datos ──────────────────────────────────────────────────────────
+// ─── Procesar datos ───────────────────────────────────────────────────────────
 function processDaily(data){
   if(!data?.daily)return null;
   const d=data.daily;
@@ -439,7 +535,7 @@ function processDaily(data){
   }));
 }
 
-// ─── Render: Info bar ────────────────────────────────────────────────────────
+// ─── Render: Info bar ─────────────────────────────────────────────────────────
 function renderInfoBar(elevation,address,timezone,lat,lon){
   const moon=moonPhase();
   let addrStr='--';
@@ -448,38 +544,39 @@ function renderInfoBar(elevation,address,timezone,lat,lon){
     addrStr=parts.slice(0,3).join(', ')||'--';
   }
   const pills=[
-    ['DIRECCIÓN',addrStr,'max-width:280px'],
-    ['ELEVACIÓN',elevation!=null?`${Math.round(elevation)} m.s.n.m.`:'--',''],
-    ['HUSO HORARIO',timezone||'--',''],
-    ['FASE LUNAR',`${moon.name} · ${moon.age}d · ${moon.illumination}% ilum.`,''],
-    ['COORDENADAS',`${fmt(lat,4)}° / ${fmt(lon,4)}°`,''],
+    ['📍 Dirección',addrStr,'max-width:280px'],
+    ['⛰ Elevación',elevation!=null?`${Math.round(elevation)} m.s.n.m.`:'--',''],
+    ['🕐 Huso horario',timezone||'--',''],
+    [`${moon.icon} Fase lunar`,`${moon.name} · ${moon.age}d · ${moon.illumination}% ilum.`,''],
+    ['🌐 Coordenadas',`${fmt(lat,4)}° / ${fmt(lon,4)}°`,''],
   ];
   document.getElementById('info-bar').innerHTML=pills.map(([lbl,val,st])=>
     `<div class="info-pill" style="${st}"><span class="ip-lbl">${lbl}</span><span class="ip-val" title="${val}">${val}</span></div>`
   ).join('');
 }
 
-// ─── Render: Condiciones actuales ────────────────────────────────────────────
+// ─── Render: Condiciones actuales ─────────────────────────────────────────────
 function renderCurrentConditions(cur){
   const el=document.getElementById('current-row');
   if(!cur){
-    el.innerHTML='<div style="background:#fff;border:0.5px solid #ddd8d0;border-radius:8px;padding:12px;color:#aaa;font-size:11px">Condiciones actuales no disponibles</div>';
+    el.innerHTML='<div style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:14px;color:var(--text-3);font-size:12px">Condiciones actuales no disponibles</div>';
     return;
   }
-  el.style.gridTemplateColumns='repeat(auto-fill,minmax(110px,1fr))';
+  el.style.gridTemplateColumns='repeat(auto-fill,minmax(120px,1fr))';
   const gust=cur.wind_gusts_10m!=null?` ráf.${fmt(cur.wind_gusts_10m,0)}`:'';
   const items=[
-    {val:cur.temperature_2m!=null?`${fmt(cur.temperature_2m,1)} °C`:'--',lbl:'Temperatura',sub:wmoDesc(cur.weather_code),col:RED},
-    {val:cur.apparent_temperature!=null?`${fmt(cur.apparent_temperature,1)} °C`:'--',lbl:'Sensación',sub:'térmica',col:ORANGE},
-    {val:cur.relative_humidity_2m!=null?`${Math.round(cur.relative_humidity_2m)} %`:'--',lbl:'Humedad rel.',sub:'',col:TEAL},
-    {val:cur.wind_speed_10m!=null?`${fmt(cur.wind_speed_10m,1)} km/h`:'--',lbl:'Viento 10m',sub:(cur.wind_direction_10m!=null?windDirName(cur.wind_direction_10m):'')+gust,col:ACCENT2},
-    {val:cur.uv_index!=null?fmt(cur.uv_index,1):'--',lbl:'Índice UV',sub:uvLabel(cur.uv_index),col:uvColor(cur.uv_index)},
-    {val:cur.surface_pressure!=null?`${Math.round(cur.surface_pressure)} hPa`:'--',lbl:'Presión',sub:'superficial',col:GRAY},
-    {val:cur.visibility!=null?`${(cur.visibility/1000).toFixed(1)} km`:'--',lbl:'Visibilidad',sub:cur.visibility!=null&&cur.visibility<2000?'Muy baja':cur.visibility<5000?'Baja':'',col:cur.visibility!=null&&cur.visibility<2000?RED:LGRAY},
-    {val:cur.cloud_cover!=null?`${Math.round(cur.cloud_cover)} %`:'--',lbl:'Nubosidad',sub:cur.precipitation>0?`Prec. ${fmt(cur.precipitation,1)} mm`:'',col:GRAY},
+    {icon:'🌡',val:cur.temperature_2m!=null?`${fmt(cur.temperature_2m,1)}°C`:'--',lbl:'Temperatura',sub:wmoDesc(cur.weather_code),col:RED},
+    {icon:'🤔',val:cur.apparent_temperature!=null?`${fmt(cur.apparent_temperature,1)}°C`:'--',lbl:'Sensación',sub:'térmica',col:ORANGE},
+    {icon:'💧',val:cur.relative_humidity_2m!=null?`${Math.round(cur.relative_humidity_2m)}%`:'--',lbl:'Humedad rel.',sub:'',col:TEAL},
+    {icon:'💨',val:cur.wind_speed_10m!=null?`${fmt(cur.wind_speed_10m,1)} km/h`:'--',lbl:'Viento 10m',sub:(cur.wind_direction_10m!=null?windDirName(cur.wind_direction_10m):'')+gust,col:BLUE},
+    {icon:'🔆',val:cur.uv_index!=null?fmt(cur.uv_index,1):'--',lbl:'Índice UV',sub:uvLabel(cur.uv_index),col:uvColor(cur.uv_index)},
+    {icon:'🔵',val:cur.surface_pressure!=null?`${Math.round(cur.surface_pressure)} hPa`:'--',lbl:'Presión',sub:'superficial',col:GRAY},
+    {icon:'👁',val:cur.visibility!=null?`${(cur.visibility/1000).toFixed(1)} km`:'--',lbl:'Visibilidad',sub:cur.visibility!=null&&cur.visibility<2000?'Muy baja':cur.visibility<5000?'Baja':'',col:cur.visibility!=null&&cur.visibility<2000?RED:LGRAY},
+    {icon:'☁️',val:cur.cloud_cover!=null?`${Math.round(cur.cloud_cover)}%`:'--',lbl:'Nubosidad',sub:cur.precipitation>0?`Prec. ${fmt(cur.precipitation,1)} mm`:'',col:GRAY},
   ];
   el.innerHTML=items.map(it=>`
     <div class="curr-card">
+      <div class="curr-icon">${it.icon}</div>
       <div class="curr-val" style="color:${it.col}">${it.val}</div>
       <div class="curr-lbl">${it.lbl}</div>
       ${it.sub?`<div class="curr-sub">${it.sub}</div>`:''}
@@ -490,7 +587,7 @@ function renderCurrentConditions(cur){
 function renderAQI(aq){
   const el=document.getElementById('aqi-panel');
   if(!aq){
-    el.innerHTML=`<div class="panel-title">CALIDAD DEL AIRE</div><div style="color:#aaa;font-size:11px">No disponible</div>`;
+    el.innerHTML=`<div class="panel-title">Calidad del aire</div><div style="color:var(--text-3);font-size:11px">No disponible</div>`;
     return;
   }
   const aqi=Math.round(aq.european_aqi??0);
@@ -502,35 +599,36 @@ function renderAQI(aq){
     ['O₃',   aq.ozone,'μg/m³',120],
     ['CO',   aq.carbon_monoxide!=null?aq.carbon_monoxide/1000:null,'mg/m³',10],
   ];
-  el.innerHTML=`<div class="panel-title">CALIDAD DEL AIRE</div>
-    <div style="text-align:center;padding:4px 0 8px">
-      <div style="font-size:30px;font-weight:700;color:${col};line-height:1">${aqi}</div>
-      <div style="font-size:11px;font-weight:700;color:${col}">${lbl}</div>
-      <div style="font-size:9px;color:#bbb">ICA Europeo</div>
+  el.innerHTML=`<div class="panel-title">Calidad del aire</div>
+    <div class="aqi-score">
+      <div class="aqi-num" style="color:${col}">${aqi}</div>
+      <div class="aqi-lbl" style="color:${col}">${lbl}</div>
+      <div class="aqi-sub">Índice europeo (ICA)</div>
     </div>`+
   pollutants.map(([name,val,unit,lim])=>{
     const pct=val!=null?Math.min(val/lim*100,100):0;
-    const c=val!=null&&val>lim*0.75?RED:val!=null&&val>lim*0.5?ACCENT:GREEN;
-    return`<div style="margin-bottom:5px">
-      <div style="display:flex;justify-content:space-between;font-size:9px;color:#888;margin-bottom:2px">
-        <span>${name}</span>
-        <span style="color:${c}">${val!=null?fmt(val,2):'--'} ${unit}</span>
+    const c=val!=null&&val>lim*0.75?RED:val!=null&&val>lim*0.5?AMBER:GREEN;
+    return`<div class="pollutant-row">
+      <div class="pollutant-header">
+        <span style="font-weight:600">${name}</span>
+        <span style="color:${c};font-weight:700">${val!=null?fmt(val,2):'--'} ${unit}</span>
       </div>
-      <div style="background:#ede9e2;border-radius:2px;height:4px">
-        <div style="width:${pct}%;background:${c};height:4px;border-radius:2px"></div>
+      <div class="pollutant-bar">
+        <div class="pollutant-fill" style="width:${pct}%;background:${c}"></div>
       </div>
     </div>`;
   }).join('');
 }
 
-// ─── Render: Actividad sísmica ───────────────────────────────────────────────
+// ─── Render: Actividad sísmica ────────────────────────────────────────────────
 function renderSeismic(quakes){
   const el=document.getElementById('seismic-panel');
-  const magCol=m=>m>=6?'#8b0000':m>=5?RED:m>=4?ORANGE:m>=3?ACCENT:GRAY;
+  const magCol=m=>m>=6?'#8b0000':m>=5?RED:m>=4?ORANGE:m>=3?AMBER:GRAY;
+  const magBg=m=>m>=6?'#fdeaea':m>=5?'#fdeaea':m>=4?'#fdf0e8':m>=3?'#fdf3dc':'var(--bg)';
 
   if(!quakes.length){
-    el.innerHTML=`<div class="panel-title">ACTIVIDAD SÍSMICA <span style="font-weight:400;color:#bbb;font-size:9px">IGP/CENSIS · r≤300km</span></div>
-      <div style="color:${GREEN};font-size:11px;padding:8px 0">Sin sismos registrados en 300 km</div>`;
+    el.innerHTML=`<div class="panel-title">Actividad sísmica <span class="pt-badge">IGP/CENSIS · r≤300km</span></div>
+      <div style="color:${GREEN};font-size:12px;padding:10px 0;text-align:center">✅ Sin sismos en 300 km</div>`;
     return;
   }
 
@@ -539,41 +637,36 @@ function renderSeismic(quakes){
   const maxMag=Math.max(...mags);
   const avgDepth=avg(quakes.map(q=>q.depth).filter(d=>d!=null));
 
-  // Bins por magnitud
-  const bins=[{lbl:'M2-3',col:ACCENT2,n:0},{lbl:'M3-4',col:TEAL,n:0},
-              {lbl:'M4-5',col:ACCENT,n:0},{lbl:'M5-6',col:ORANGE,n:0},{lbl:'M6+',col:RED,n:0}];
+  const bins=[{lbl:'M2-3',col:'#1d5fa8',n:0},{lbl:'M3-4',col:TEAL,n:0},
+              {lbl:'M4-5',col:AMBER,n:0},{lbl:'M5-6',col:ORANGE,n:0},{lbl:'M6+',col:RED,n:0}];
   mags.forEach(m=>{
     if(m<3)bins[0].n++;else if(m<4)bins[1].n++;else if(m<5)bins[2].n++;
     else if(m<6)bins[3].n++;else bins[4].n++;
   });
   const maxBin=Math.max(...bins.map(b=>b.n))||1;
-
-  // Top 6 por magnitud
   const topMag=[...quakes].sort((a,b)=>b.mag-a.mag).slice(0,6);
-  // 3 más recientes
   const recent=[...quakes].sort((a,b)=>b.time-a.time).slice(0,3);
-
   const dayStr=t=>t?.toLocaleDateString('es-PE',{day:'numeric',month:'short'})||'';
 
   el.innerHTML=`
-    <div class="panel-title">ACTIVIDAD SÍSMICA <span style="font-weight:400;color:#bbb;font-size:9px">IGP/CENSIS · r≤300km</span></div>
+    <div class="panel-title">Actividad sísmica <span class="pt-badge">IGP/CENSIS · r≤300km</span></div>
 
     <div class="seis-stats">
       <div class="seis-stat">
         <div class="sv" style="color:${RED}">${total}</div>
-        <div class="sl">SISMOS</div>
+        <div class="sl">Sismos</div>
       </div>
       <div class="seis-stat">
         <div class="sv" style="color:${magCol(maxMag)}">M${fmt(maxMag,1)}</div>
-        <div class="sl">MÁXIMO</div>
+        <div class="sl">Máximo</div>
       </div>
       <div class="seis-stat">
         <div class="sv" style="color:${LGRAY}">${avgDepth!=null?Math.round(avgDepth):'--'}</div>
-        <div class="sl">PROF. km</div>
+        <div class="sl">Prof. km</div>
       </div>
     </div>
 
-    <div style="font-size:8px;font-weight:700;color:#bbb;letter-spacing:.5px;margin-bottom:5px">DISTRIBUCIÓN POR MAGNITUD</div>
+    <div class="seis-section-title">Distribución por magnitud</div>
     ${bins.map(b=>`
       <div class="seis-bin">
         <span class="seis-bin-lbl">${b.lbl}</span>
@@ -583,30 +676,30 @@ function renderSeismic(quakes){
         <span class="seis-bin-n" style="color:${b.col}">${b.n}</span>
       </div>`).join('')}
 
-    <div style="font-size:8px;font-weight:700;color:#bbb;letter-spacing:.5px;margin:8px 0 5px">MÁS SIGNIFICATIVOS</div>
+    <div class="seis-section-title">Más significativos</div>
     ${topMag.map(q=>`
       <div class="seis-event">
-        <span class="seis-mag" style="color:${magCol(q.mag)}">M${fmt(q.mag,1)}</span>
+        <span class="seis-mag-badge" style="color:${magCol(q.mag)};background:${magBg(q.mag)}">M${fmt(q.mag,1)}</span>
         <span class="seis-place" title="${q.place}">${q.place}</span>
         <span class="seis-meta">${q.depth!=null?q.depth+'km':''}<br>${q.dist}km</span>
       </div>`).join('')}
 
-    <div style="font-size:8px;font-weight:700;color:#bbb;letter-spacing:.5px;margin:8px 0 5px">MÁS RECIENTES</div>
+    <div class="seis-section-title">Más recientes</div>
     ${recent.map(q=>`
       <div class="seis-event">
-        <span class="seis-mag" style="color:${magCol(q.mag)}">M${fmt(q.mag,1)}</span>
+        <span class="seis-mag-badge" style="color:${magCol(q.mag)};background:${magBg(q.mag)}">M${fmt(q.mag,1)}</span>
         <span class="seis-place" title="${q.place}">${q.place}</span>
         <span class="seis-meta">${dayStr(q.time)}<br>${q.dist}km</span>
       </div>`).join('')}
 
-    <div style="font-size:8px;color:#ccc;margin-top:6px">IGP/CENSIS · ${total} eventos en catálogo actual</div>`;
+    <div style="font-size:9px;color:var(--text-3);margin-top:6px">${total} eventos en catálogo actual</div>`;
 }
 
 // ─── Render: Pronóstico 7 días ────────────────────────────────────────────────
 function renderForecast(forecast){
   const el=document.getElementById('forecast-panel');
   if(!forecast){
-    el.innerHTML=`<div class="panel-title">PRONÓSTICO 7 DÍAS</div><div style="color:#aaa;font-size:11px">No disponible</div>`;
+    el.innerHTML=`<div class="panel-title">Pronóstico 7 días</div><div style="color:var(--text-3);font-size:11px">No disponible</div>`;
     return;
   }
   const dnames=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
@@ -615,8 +708,8 @@ function renderForecast(forecast){
   const tLo=Math.floor(Math.min(...allT)),tHi=Math.ceil(Math.max(...allT));
   const range=Math.max(tHi-tLo,1);
   const BARH=60;
-  el.innerHTML=`<div class="panel-title">PRONÓSTICO 7 DÍAS</div>
-    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-top:4px">`+
+  el.innerHTML=`<div class="panel-title">Pronóstico 7 días</div>
+    <div class="forecast-grid">`+
   d.time.slice(0,7).map((t,i)=>{
     const date=new Date(t+'T00:00:00');
     const tmax=d.temperature_2m_max[i],tmin=d.temperature_2m_min[i];
@@ -624,18 +717,19 @@ function renderForecast(forecast){
     const uv=d.uv_index_max?.[i];
     const barHi=tmax!=null?((tmax-tLo)/range*BARH)|0:0;
     const barLo=tmin!=null?((tmin-tLo)/range*BARH)|0:0;
-    return`<div style="text-align:center">
-      <div style="font-size:9px;font-weight:700;color:#666">${dnames[date.getDay()]}</div>
-      <div style="font-size:8px;color:#bbb;margin-bottom:2px">${date.getDate()}</div>
-      <div style="font-size:8px;color:#555;margin:2px 0;white-space:nowrap;overflow:hidden">${wmoShort(code)}</div>
-      <div style="height:${BARH}px;position:relative;margin:2px auto;width:14px">
+    return`<div class="fc-day">
+      <div class="fc-dow">${dnames[date.getDay()]}</div>
+      <div class="fc-date">${date.getDate()}</div>
+      <div style="font-size:16px;line-height:1.3">${wmoIcon(code)}</div>
+      <div class="fc-cond">${wmoShort(code)}</div>
+      <div class="fc-bar">
         <div style="position:absolute;bottom:0;left:0;width:100%;height:${barHi}px;background:${RED}55;border-radius:2px 2px 0 0"></div>
-        <div style="position:absolute;bottom:0;left:0;width:100%;height:${barLo}px;background:${ACCENT2}55;border-radius:2px 2px 0 0"></div>
+        <div style="position:absolute;bottom:0;left:0;width:100%;height:${barLo}px;background:${BLUE}55;border-radius:2px 2px 0 0"></div>
       </div>
-      <div style="font-size:9px;color:${RED};font-weight:700">${tmax!=null?Math.round(tmax)+'°':'--'}</div>
-      <div style="font-size:9px;color:${ACCENT2}">${tmin!=null?Math.round(tmin)+'°':'--'}</div>
-      ${prec>0.5?`<div style="font-size:8px;color:${ACCENT2};margin-top:1px">${fmt(prec,0)}mm</div>`:''}
-      ${uv!=null?`<div style="font-size:8px;color:${uvColor(uv)};margin-top:1px">UV${Math.round(uv)}</div>`:''}
+      <div class="fc-tmax">${tmax!=null?Math.round(tmax)+'°':'--'}</div>
+      <div class="fc-tmin">${tmin!=null?Math.round(tmin)+'°':'--'}</div>
+      ${prec>0.5?`<div class="fc-prec">${fmt(prec,0)}mm</div>`:''}
+      ${uv!=null?`<div class="fc-uv" style="color:${uvColor(uv)}">UV${Math.round(uv)}</div>`:''}
     </div>`;
   }).join('')+'</div>';
 }
@@ -643,7 +737,7 @@ function renderForecast(forecast){
 // ─── Render: Entorno urbano ───────────────────────────────────────────────────
 function renderAmenities(elements){
   const el=document.getElementById('amenities-panel');
-  document.getElementById('amenities-radius').textContent='(r=600m)';
+  document.getElementById('amenities-radius').textContent='r = 600m';
   const catMap={
     hospital:'Hospitales',clinic:'Clínicas',school:'Colegios',university:'Universidades',
     pharmacy:'Farmacias',supermarket:'Supermercados',marketplace:'Mercados',
@@ -657,33 +751,31 @@ function renderAmenities(elements){
     const cat=e.tags?.amenity||e.tags?.highway||e.tags?.leisure;
     if(cat&&catMap[cat])counts[cat]=(counts[cat]||0)+1;
   });
-  const entries=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
   const totalEl=elements.length;
-
   const priorityGroups=[
-    {title:'Salud',cats:['hospital','clinic','pharmacy'],col:RED},
-    {title:'Educación',cats:['school','university'],col:ACCENT2},
-    {title:'Comercio',cats:['supermarket','marketplace','restaurant','cafe','bank','atm','fuel'],col:ACCENT},
-    {title:'Servicios',cats:['police','fire_station','bus_stop'],col:TEAL},
-    {title:'Recreación',cats:['park','garden','sports_centre','playground','stadium'],col:GREEN},
+    {title:'Salud',cats:['hospital','clinic','pharmacy'],col:RED,bg:'#fdeaea'},
+    {title:'Educación',cats:['school','university'],col:BLUE,bg:'#e8f1fb'},
+    {title:'Comercio',cats:['supermarket','marketplace','restaurant','cafe','bank','atm','fuel'],col:AMBER,bg:'#fdf3dc'},
+    {title:'Servicios',cats:['police','fire_station','bus_stop'],col:TEAL,bg:'#e0f5f2'},
+    {title:'Recreación',cats:['park','garden','sports_centre','playground','stadium'],col:GREEN,bg:'#e6f5ec'},
   ];
 
-  let html=`<div class="panel-title">ENTORNO URBANO <span id="amenities-radius" style="font-weight:400;color:#bbb">(r=600m)</span></div>`;
-  if(!entries.length){
-    html+='<div style="color:#aaa;font-size:11px">Sin datos OSM en este radio</div>';
+  let html=`<div class="panel-title">Entorno urbano <span class="pt-badge" id="amenities-radius">r = 600m</span></div>`;
+  if(!Object.keys(counts).length){
+    html+='<div style="color:var(--text-3);font-size:11px">Sin datos OSM en este radio</div>';
   } else {
     priorityGroups.forEach(g=>{
       const items=g.cats.filter(c=>counts[c]);
       if(!items.length)return;
-      html+=`<div style="font-size:9px;font-weight:700;color:${g.col};margin:5px 0 3px;letter-spacing:.5px">${g.title.toUpperCase()}</div>`;
+      html+=`<div class="amenity-group-title" style="color:${g.col}">${g.title}</div>`;
       items.forEach(c=>{
-        html+=`<div class="card-row" style="margin-bottom:2px">
+        html+=`<div class="amenity-row">
           <span class="k">${catMap[c]}</span>
-          <span class="v" style="color:${g.col}">${counts[c]}</span>
+          <span class="amenity-badge" style="background:${g.col}">${counts[c]}</span>
         </div>`;
       });
     });
-    html+=`<div style="font-size:9px;color:#ccc;margin-top:6px">Total: ${totalEl} elementos OSM</div>`;
+    html+=`<div style="font-size:9px;color:var(--text-3);margin-top:8px">Total: ${totalEl} elementos OSM</div>`;
   }
   el.innerHTML=html;
 }
@@ -777,7 +869,7 @@ function drawIso(lat,lon,name){
   map.addControl(new maplibregl.AttributionControl({compact:true}));
   map.addControl(new maplibregl.NavigationControl({showCompass:true}),'bottom-right');
   map.addControl(new maplibregl.ScaleControl({unit:'metric',maxWidth:90}),'bottom-left');
-  new maplibregl.Marker({color:'#c8900a',scale:0.9})
+  new maplibregl.Marker({color:AMBER,scale:0.9})
     .setLngLat([lon,lat])
     .setPopup(new maplibregl.Popup({offset:25}).setText(name||'Lote de análisis'))
     .addTo(map);
@@ -810,18 +902,17 @@ function drawIso(lat,lon,name){
     ]}});
     map.addLayer({id:'circle-line',type:'line',source:'analysis',
       filter:['==','$type','LineString'],
-      paint:{'line-color':'#c8900a','line-width':1.8,'line-dasharray':[5,4],'line-opacity':0.9}});
+      paint:{'line-color':AMBER,'line-width':1.8,'line-dasharray':[5,4],'line-opacity':0.9}});
     map.addLayer({id:'circle-lbl',type:'symbol',source:'analysis',
       filter:['==','$type','Point'],
       layout:{'text-field':['get','t'],'text-size':10,'text-anchor':'left','text-offset':[0.5,0]},
-      paint:{'text-color':'#c8900a','text-halo-color':'rgba(255,255,255,0.95)','text-halo-width':2}});
+      paint:{'text-color':AMBER,'text-halo-color':'rgba(255,255,255,0.95)','text-halo-width':2}});
     updateSun();
-    const sc=document.getElementById('sun-controls');
-    sc.style.display='flex';
+    document.getElementById('sun-controls').style.display='flex';
   });
 }
 
-// ─── Rosa de vientos ─────────────────────────────────────────────────────────
+// ─── Rosa de vientos ──────────────────────────────────────────────────────────
 function drawWindRose(mdata){
   const cv=document.getElementById('wind-canvas');
   const dpr=Math.min(window.devicePixelRatio||1,2);
@@ -833,8 +924,8 @@ function drawWindRose(mdata){
   const ctx=cv.getContext('2d');
   ctx.setTransform(1,0,0,1,0,0);ctx.scale(dpr,dpr);
   const W=DW,H=DH,cx=W/2,cy=H/2+6,R=Math.min(W,H)*0.34;
-  ctx.fillStyle='#ffffff';ctx.fillRect(0,0,W,H);
-  if(!mdata){ctx.fillStyle='#888';ctx.font='12px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('Sin datos',cx,cy);return;}
+  ctx.fillStyle=PANEL;ctx.fillRect(0,0,W,H);
+  if(!mdata){ctx.fillStyle=GRAY;ctx.font='12px Inter,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('Sin datos',cx,cy);return;}
   const bins=Array(16).fill(0);
   mdata.forEach(m=>{if(m.wd!=null&&m.ws!=null){const b=Math.round(((m.wd%360)+360)%360/22.5)%16;bins[b]+=m.ws;}});
   const maxB=Math.max(...bins)||1;
@@ -842,21 +933,21 @@ function drawWindRose(mdata){
   function drawStatic(){
     ctx.fillStyle='#f5f2ed';ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.fill();
     [0.33,0.66,1].forEach((f,i)=>{
-      ctx.strokeStyle=i===2?'#a09888':'#ddd8d0';ctx.lineWidth=i===2?1:0.5;
+      ctx.strokeStyle=i===2?'#b0a898':'#e0dbd4';ctx.lineWidth=i===2?1:0.5;
       ctx.setLineDash(i===2?[]:[3,4]);ctx.beginPath();ctx.arc(cx,cy,R*f,0,Math.PI*2);ctx.stroke();
-      ctx.setLineDash([]);ctx.fillStyle='rgba(100,100,100,0.7)';
-      ctx.font='7px sans-serif';ctx.textAlign='left';ctx.textBaseline='middle';
+      ctx.setLineDash([]);ctx.fillStyle='rgba(100,100,100,0.6)';
+      ctx.font='7px Inter,sans-serif';ctx.textAlign='left';ctx.textBaseline='middle';
       ctx.fillText(Math.round(maxB*f)+' km',cx+R*f+2,cy);
     });
     for(let i=0;i<16;i++){
       const a=toRad(90-i*22.5);
-      ctx.strokeStyle=i%2===0?'rgba(180,170,160,0.8)':'rgba(220,215,210,0.6)';
+      ctx.strokeStyle=i%2===0?'rgba(180,170,160,0.7)':'rgba(220,215,210,0.5)';
       ctx.lineWidth=0.5;ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(a)*R,cy-Math.sin(a)*R);ctx.stroke();
     }
     [['N',90],['NE',45],['E',0],['SE',-45],['S',-90],['SO',-135],['O',180],['NO',135]].forEach(([nm,ad])=>{
       const a=toRad(ad);const lx=cx+Math.cos(a)*(R+17),ly=cy-Math.sin(a)*(R+17);
-      ctx.fillStyle=nm==='N'?ACCENT:'#333';
-      ctx.font=nm==='N'?'bold 11px sans-serif':'8px sans-serif';
+      ctx.fillStyle=nm==='N'?AMBER:'#444';
+      ctx.font=nm==='N'?'bold 11px Inter,sans-serif':'8px Inter,sans-serif';
       ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(nm,lx,ly);
     });
   }
@@ -864,25 +955,25 @@ function drawWindRose(mdata){
     bins.forEach((v,i)=>{
       if(!v)return;const r=R*(v/maxB)*prog;if(r<0.5)return;
       const ang=toRad(90-i*22.5),half=toRad(11.25),t=v/maxB;
-      const [fc,sc]=t>0.7?['rgba(200,64,32,0.85)','rgba(200,64,32,1)']:
-                     t>0.4?['rgba(200,144,10,0.85)','rgba(200,144,10,1)']:
-                           ['rgba(26,109,176,0.85)','rgba(26,109,176,1)'];
+      const [fc,sc]=t>0.7?['rgba(184,32,32,0.8)','rgba(184,32,32,1)']:
+                     t>0.4?['rgba(181,121,10,0.8)','rgba(181,121,10,1)']:
+                           ['rgba(29,95,168,0.8)','rgba(29,95,168,1)'];
       ctx.fillStyle=fc;ctx.strokeStyle=sc;ctx.lineWidth=1;
       ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,-(ang+half),-(ang-half),false);ctx.closePath();ctx.fill();ctx.stroke();
     });
     ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(cx,cy,6,0,Math.PI*2);ctx.fill();
-    ctx.strokeStyle=ACCENT;ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(cx,cy,6,0,Math.PI*2);ctx.stroke();
+    ctx.strokeStyle=AMBER;ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(cx,cy,6,0,Math.PI*2);ctx.stroke();
   }
   const dur=1000,t0=performance.now();
   function tick(now){
     const p=Math.min((now-t0)/dur,1),ease=1-Math.pow(1-p,3);
-    ctx.clearRect(0,0,W,H);ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);
+    ctx.clearRect(0,0,W,H);ctx.fillStyle=PANEL;ctx.fillRect(0,0,W,H);
     drawStatic();drawPetals(ease);if(p<1)requestAnimationFrame(tick);
   }
   requestAnimationFrame(tick);
   const wsAvg=avg(wsVals),maxIdx=bins.indexOf(maxB);
   document.getElementById('wind-legend').innerHTML=
-    `<span style="color:#888;font-size:10px">Predominante: <b style="color:${ACCENT}">${windDirName(maxIdx*22.5)}</b> · Media: <b style="color:${ACCENT2}">${fmt(wsAvg,1)} km/h</b></span>`;
+    `<span style="color:var(--text-2);font-size:10px">Predominante: <b style="color:${AMBER}">${windDirName(maxIdx*22.5)}</b> · Media: <b style="color:${BLUE}">${fmt(wsAvg,1)} km/h</b></span>`;
 }
 
 // ─── Trayectoria solar ────────────────────────────────────────────────────────
@@ -903,7 +994,7 @@ function drawSunPath(lat){
   [[0.33,'60°'],[0.67,'30°']].forEach(([f,lbl])=>{
     ctx.strokeStyle='rgba(255,255,255,0.45)';ctx.lineWidth=0.8;ctx.setLineDash([4,5]);
     ctx.beginPath();ctx.arc(cx,cy,R*f,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
-    ctx.fillStyle='rgba(255,255,255,0.75)';ctx.font='7px sans-serif';
+    ctx.fillStyle='rgba(255,255,255,0.75)';ctx.font='7px Inter,sans-serif';
     ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillText(lbl,cx+R*f+3,cy);
   });
   [['N',90],['S',270],['E',0],['O',180]].forEach(([nm,ang])=>{
@@ -911,8 +1002,8 @@ function drawSunPath(lat){
     ctx.strokeStyle='rgba(255,255,255,0.3)';ctx.lineWidth=0.7;
     ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(a)*R,cy+Math.sin(a)*R);ctx.stroke();
     const lx=cx+Math.cos(a)*(R+15),ly=cy+Math.sin(a)*(R+15);
-    ctx.fillStyle=nm==='S'?ACCENT:'#222';
-    ctx.font=nm==='S'?'bold 11px sans-serif':'9px sans-serif';
+    ctx.fillStyle=nm==='S'?AMBER:'#222';
+    ctx.font=nm==='S'?'bold 11px Inter,sans-serif':'9px Inter,sans-serif';
     ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(nm,lx,ly);
   });
   function getSunPts(doy){
@@ -939,9 +1030,9 @@ function drawSunPath(lat){
     const r=R*(1-alt/90),px=cx+r*Math.sin(toRad(az)),py=cy+r*Math.cos(toRad(az));
     ctx.fillStyle='rgba(255,255,255,0.6)';ctx.beginPath();ctx.arc(px,py,4.5,0,Math.PI*2);ctx.fill();
     ctx.fillStyle='#2a9a50';ctx.beginPath();ctx.arc(px,py,3,0,Math.PI*2);ctx.fill();
-    const lbl=hr+'h';ctx.font='bold 7px sans-serif';ctx.textAlign='center';ctx.textBaseline='bottom';
+    const lbl=hr+'h';ctx.font='bold 7px Inter,sans-serif';ctx.textAlign='center';ctx.textBaseline='bottom';
     const tw=ctx.measureText(lbl).width;
-    ctx.fillStyle='rgba(255,255,255,0.82)';ctx.fillRect(px-tw/2-2,py-14,tw+4,10);
+    ctx.fillStyle='rgba(255,255,255,0.85)';ctx.fillRect(px-tw/2-2,py-14,tw+4,10);
     ctx.fillStyle='#1a6040';ctx.fillText(lbl,px,py-5);
   });
   const imgData=ctx.getImageData(0,0,cv.width,cv.height);
@@ -990,35 +1081,35 @@ function renderAll(lat,mdata){
   const mxIdx=tMaxAll.length?mdata.map(m=>m.tmax||0).indexOf(Math.max(...tMaxAll)):0;
   const mnIdx=tMinAll.length?mdata.map(m=>m.tmin||99).indexOf(Math.min(...tMinAll)):7;
   const wdAll=mdata?mdata.map(m=>m.wd).filter(v=>v!=null):[];
-  const domWd=avg(wdAll); // eslint-disable-line no-unused-vars
+  const domWd=avg(wdAll);
   const domDir=domWd!=null?windDirName(domWd):'--';
-
   const koppen=koppenClassify(mdata);
 
   // CLIMA panel
-  document.getElementById('clima-rows').innerHTML=[
-    [tMaxAvg!=null?`${Math.round(tMaxAvg)} °C`:'--','T° máxima prom.',RED],
-    [tMinAvg!=null?`${Math.round(tMinAvg)} °C`:'--','T° mínima prom.',ACCENT2],
-    [tMed!=null?`${fmt(tMed,1)} °C`:'--','T° media anual',LGRAY],
-    [amplitude!=null?`${fmt(amplitude,1)} °C`:'--','Amplitud térmica',ORANGE],
-    [rhAvg!=null?`${Math.round(rhAvg)} %`:'--','Humedad rel. prom.',TEAL],
-    [sunAvg!=null?`${fmt(sunAvg,1)} h/día`:'--','Horas de sol prom.',ACCENT],
-    [wsAvg!=null?`${fmt(wsAvg,1)} km/h`:'--','Vel. viento prom.',GRAY],
-    [precTotal!=null?`${Math.round(precTotal)} mm/año`:'--','Precipitación anual',LGRAY],
-    [koppen.code,'Koppen',TEAL],
-  ].map(([val,lbl,col])=>`
-    <div class="clima-row">
-      <div class="val" style="color:${col}">${val}</div>
-      <div class="lbl">${lbl}</div>
+  const climaStats=[
+    {val:tMaxAvg!=null?`${Math.round(tMaxAvg)} °C`:'--',lbl:'T° máxima prom.',col:RED},
+    {val:tMinAvg!=null?`${Math.round(tMinAvg)} °C`:'--',lbl:'T° mínima prom.',col:BLUE},
+    {val:tMed!=null?`${fmt(tMed,1)} °C`:'--',lbl:'T° media anual',col:LGRAY},
+    {val:amplitude!=null?`${fmt(amplitude,1)} °C`:'--',lbl:'Amplitud térmica',col:ORANGE},
+    {val:rhAvg!=null?`${Math.round(rhAvg)} %`:'--',lbl:'Humedad rel. prom.',col:TEAL},
+    {val:sunAvg!=null?`${fmt(sunAvg,1)} h/día`:'--',lbl:'Horas de sol prom.',col:AMBER},
+    {val:wsAvg!=null?`${fmt(wsAvg,1)} km/h`:'--',lbl:'Vel. viento prom.',col:GRAY},
+    {val:precTotal!=null?`${Math.round(precTotal)} mm/año`:'--',lbl:'Precipitación anual',col:LGRAY},
+    {val:koppen.code,lbl:'Koppen',col:TEAL},
+  ];
+  document.getElementById('clima-rows').innerHTML=climaStats.map(s=>`
+    <div class="clima-stat">
+      <div class="cs-val" style="color:${s.col}">${s.val}</div>
+      <div class="cs-lbl">${s.lbl}</div>
     </div>`).join('');
 
-  // Bar chart temperatura mensual
+  // Bar chart
   if(mdata){
     const allT=[...tMaxAll,...tMinAll];
     const tLo=Math.floor(Math.min(...allT))-1,tHi=Math.ceil(Math.max(...allT))+1;
     const dryMonths=mdata.map((m,i)=>m.prec<(m.tmax+m.tmin)*2?mnames[i]:null).filter(Boolean);
     document.getElementById('bar-chart').innerHTML=
-      `<div style="font-size:9px;color:#555;margin-bottom:4px">T° mensual (°C)</div>`+
+      `<div class="bar-chart-title">T° mensual (°C)</div>`+
       mdata.map((m,i)=>{
         const pMax=m.tmax!=null?((m.tmax-tLo)/(tHi-tLo)*100):0;
         const pMin=m.tmin!=null?((m.tmin-tLo)/(tHi-tLo)*100):0;
@@ -1032,7 +1123,7 @@ function renderAll(lat,mdata){
           <span class="bar-val">${m.tmin!=null?Math.round(m.tmin):'--'}–${m.tmax!=null?Math.round(m.tmax):'--'}°</span>
         </div>`;
       }).join('')+
-      (dryMonths.length?`<div style="font-size:8px;color:${ORANGE};margin-top:4px">Meses secos (P&lt;2T): ${dryMonths.join(', ')}</div>`:'');
+      (dryMonths.length?`<div style="font-size:8px;color:${ORANGE};margin-top:5px">Meses secos (P&lt;2T): ${dryMonths.join(', ')}</div>`:'');
   }
 
   // CARDS
@@ -1044,7 +1135,7 @@ function renderAll(lat,mdata){
   const maxSunM=sunAll.length?mnames[mdata.map(m=>m.sun||0).indexOf(Math.max(...mdata.map(m=>m.sun||0)))]:'--';
 
   document.getElementById('cards-row').innerHTML=[
-    {title:'ASOLEAMIENTO',color:ACCENT,rows:[
+    {title:'☀ Asoleamiento',color:AMBER,rows:[
       ['Azimut / Altitud',`${fmt(az,1)}° / ${fmt(alt,1)}°`],
       ['Salida / Puesta',`${fmtH(eq.rise)} / ${fmtH(eq.set)}`],
       ['Horas de luz',`${fmt(eq.day,1)} h (equinoccio)`],
@@ -1052,7 +1143,7 @@ function renderAll(lat,mdata){
       ['Mín. solar',`${fmt(jun21.day,1)} h (21 jun)`],
       ['Mes + soleado',maxSunM],
     ]},
-    {title:'TEMPERATURA',color:ACCENT2,rows:[
+    {title:'🌡 Temperatura',color:BLUE,rows:[
       ['T° máx. absoluta',tMaxAll.length?`${Math.round(Math.max(...tMaxAll))} °C`:'--'],
       ['T° máx. prom.',tMaxAvg!=null?`${Math.round(tMaxAvg)} °C (${mnames[mxIdx]})`:'--'],
       ['T° media anual',tMed!=null?`${fmt(tMed,1)} °C`:'--'],
@@ -1060,7 +1151,7 @@ function renderAll(lat,mdata){
       ['T° mín. absoluta',tMinAll.length?`${Math.round(Math.min(...tMinAll))} °C`:'--'],
       ['Amplitud térmica',amplitude!=null?`${fmt(amplitude,1)} °C`:'--'],
     ]},
-    {title:'VIENTOS & NUBES',color:ORANGE,rows:[
+    {title:'💨 Vientos & nubes',color:ORANGE,rows:[
       ['Dirección prom.',domDir],
       ['Vel. media',wsAvg!=null?`${fmt(wsAvg,1)} km/h`:'--'],
       ['Nubosidad media',ccAvg!=null?`${Math.round(ccAvg)} %`:'--'],
@@ -1068,7 +1159,7 @@ function renderAll(lat,mdata){
       ['Meses despejados',clearM.slice(0,4).join(', ')||'--'],
       ['Humedad rel.',rhAvg!=null?`${Math.round(rhAvg)} %`:'--'],
     ]},
-    {title:'HUMEDAD & PREC.',color:TEAL,rows:[
+    {title:'🌧 Humedad & prec.',color:TEAL,rows:[
       ['Precipitación anual',precTotal!=null?`${Math.round(precTotal)} mm`:'--'],
       ['Mes más lluvioso',precMes],
       ['Mes más seco',minPrec],
@@ -1077,7 +1168,7 @@ function renderAll(lat,mdata){
       ['Sol prom.',sunAvg!=null?`${fmt(sunAvg,1)} h/día`:'--'],
     ]},
   ].map(card=>`
-    <div class="card" style="border:0.5px solid ${card.color}40">
+    <div class="card" style="border-color:${card.color}40">
       <div class="card-head" style="background:${card.color}">${card.title}</div>
       <div class="card-body">
         ${card.rows.map(([k,v])=>`
@@ -1098,14 +1189,12 @@ async function generate(){
 
   document.getElementById('subtitle').textContent=`${name}  ·  ${fmt(lat,4)}° / ${fmt(lon,4)}°`;
   document.getElementById('footer-coords').textContent=`Lat: ${fmt(lat,4)}  Lon: ${fmt(lon,4)}`;
-  document.getElementById('info-bar').innerHTML='<div style="color:#bbb;font-size:11px;padding:4px 0">Consultando APIs...</div>';
-  document.getElementById('current-row').innerHTML='<div style="background:#fff;border:0.5px solid #ddd8d0;border-radius:8px;padding:12px;color:#bbb;font-size:11px">Cargando condiciones actuales...</div>';
+  document.getElementById('info-bar').innerHTML='<div style="color:var(--text-3);font-size:11px;padding:4px 0">Consultando APIs...</div>';
+  document.getElementById('current-row').innerHTML='<div style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:14px;color:var(--text-3);font-size:12px">Cargando condiciones actuales...</div>';
 
-  // Lanzar mapa y trayectoria solar de inmediato (no dependen de APIs)
   drawIso(lat,lon,name);
   drawSunPath(lat);
 
-  // Lanzar todas las APIs en paralelo
   const [rawClimate,cur,aq,elev,addr,quakes,forecast7,amenities]=await Promise.all([
     fetchClimate(lat,lon),
     fetchCurrent(lat,lon),
@@ -1120,7 +1209,6 @@ async function generate(){
   const mdata=processDaily(rawClimate);
   const timezone=rawClimate?.timezone;
 
-  // Renderizar todos los paneles
   renderInfoBar(elev,addr,timezone,lat,lon);
   renderCurrentConditions(cur);
   renderAQI(aq);
@@ -1132,7 +1220,7 @@ async function generate(){
 
   const st=document.getElementById('status');
   st.textContent='✓ Análisis completo';
-  st.style.color='#4be870';
+  st.style.color='#1a7a38';
 }
 
 generate();
